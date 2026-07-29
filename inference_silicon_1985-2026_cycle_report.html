@@ -1,0 +1,1805 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inference Silicon · 1985–2026 · Cycle Reconstruction × Sector Deep Dive</title>
+<style>
+  :root{
+    --bg:#F5F1EA; --paper:#FBF9F4; --paper-alt:#EFE8D8; --paper-deep:#E9E1CC;
+    --ink:#2B2823; --ink-dim:#5C574C; --ink-faint:#8C8577;
+    --line:#E2DBC5; --line-strong:#D3C6A4;
+    --accent:#C1603C; --accent-dark:#9C4B2E; --accent-soft:#F0DCCC;
+    --blue:#3E6E8E; --blue-soft:#D9E5EA; --blue-light:#7FA6BE;
+    --red:#B14A3D; --red-soft:#F3DEDA;
+    --gold:#B08A3E; --gold-soft:#F0E6C8;
+    --green:#5F8C63; --green-soft:#DEE9DD;
+    --grey:#9A9484; --grey-soft:#EAE6DA;
+    --mono: "SFMono-Regular", Consolas, Menlo, monospace;
+    --serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Songti SC", "STSong", serif;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--serif);
+    line-height:1.8; font-size:16.5px;
+  }
+  .wrap{max-width:980px; margin:0 auto; padding:0 24px;}
+  header.cover{
+    padding:100px 24px 70px; text-align:center; border-bottom:1px solid var(--line-strong);
+    background: var(--paper);
+  }
+  .eyebrow{color:var(--accent); letter-spacing:.14em; text-transform:uppercase; font-size:12px; font-weight:600; font-family:var(--mono);}
+  h1.title{font-size:2.5rem; margin:20px auto 10px; max-width:820px; line-height:1.3; font-weight:500; color:var(--ink);}
+  .subtitle{color:var(--ink-dim); font-size:1.1rem; max-width:680px; margin:0 auto 28px;}
+  .cover-meta{color:var(--ink-faint); font-size:12.5px; margin-top:22px; font-family:var(--mono);}
+  .kf-grid{display:flex; flex-wrap:wrap; gap:9px; justify-content:center; margin-top:30px;}
+  .kf-chip{background:var(--paper-alt); border:1px solid var(--line-strong); border-radius:999px; padding:7px 16px; font-size:13px; color:var(--ink-dim); font-family:var(--mono);}
+
+  section{padding:58px 0; border-bottom:1px solid var(--line);}
+  section:last-of-type{border-bottom:none;}
+  .sec-label{color:var(--accent); font-size:12.5px; letter-spacing:.12em; text-transform:uppercase; font-weight:700; margin-bottom:8px; font-family:var(--mono);}
+  h2{font-size:1.75rem; margin:0 0 22px; line-height:1.4; font-weight:500;}
+  h3{font-size:1.22rem; margin:36px 0 8px; color:var(--ink); font-weight:600;}
+  p{color:var(--ink-dim); margin:14px 0;}
+  strong{color:var(--ink); font-weight:650;}
+  .lede{font-size:1.1rem; color:var(--ink); font-weight:500;}
+
+  blockquote.quote{
+    background:var(--paper); border-left:3px solid var(--accent); margin:26px 0; padding:20px 24px;
+    border-radius:2px; box-shadow:0 1px 2px rgba(60,50,30,0.05);
+  }
+  blockquote.quote p.qtext{font-size:1.1rem; font-style:italic; color:var(--ink); margin:0 0 10px;}
+  .qmeta{font-size:13px; color:var(--ink-faint); border-top:1px dashed var(--line-strong); padding-top:10px; margin-top:10px;}
+  .qmeta b{color:var(--ink-dim); display:block; margin-bottom:4px; font-style:normal;}
+
+  .chart-card{
+    background:var(--paper); border:1px solid var(--line-strong); border-radius:6px;
+    padding:22px 22px 14px; margin:26px 0;
+  }
+  .chart-card .cc-title{font-size:15px; font-weight:650; color:var(--ink); margin-bottom:2px;}
+  .chart-card .cc-sub{font-size:11.5px; color:var(--ink-faint); margin-bottom:14px; font-family:var(--mono); letter-spacing:.03em; text-transform:uppercase;}
+  .chart-card canvas{max-width:100%;}
+  .cc-src{font-size:11px; color:var(--ink-faint); text-align:right; margin-top:10px; font-family:var(--mono);}
+  .cc-note{font-size:13px; color:var(--ink-dim); font-style:italic; margin-top:10px;}
+
+  table.data{width:100%; border-collapse:collapse; margin:22px 0; font-size:14px;}
+  table.data th{background:var(--paper-alt); color:var(--ink-dim); text-align:left; padding:10px 12px; font-weight:600; border-bottom:2px solid var(--line-strong); font-family:var(--mono); font-size:12px; letter-spacing:.03em; text-transform:uppercase;}
+  table.data td{padding:10px 12px; border-bottom:1px solid var(--line); color:var(--ink-dim); vertical-align:top;}
+  table.data tr:hover td{background:var(--paper);}
+
+  .stat-row{display:flex; flex-wrap:wrap; gap:14px; margin:24px 0;}
+  .stat{flex:1; min-width:160px; background:var(--paper); border:1px solid var(--line-strong); border-radius:6px; padding:16px 18px;}
+  .stat .num{font-size:1.6rem; font-weight:700; color:var(--accent);}
+  .stat .lab{font-size:12.5px; color:var(--ink-dim); margin-top:4px;}
+  .stat .src{font-size:11px; color:var(--ink-faint); margin-top:6px; font-family:var(--mono);}
+
+  .trigger-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:14px; margin:20px 0;}
+  .trigger-card{background:var(--paper); border:1px solid var(--line-strong); border-left:3px solid var(--red); border-radius:4px; padding:16px 18px;}
+  .trigger-card h4{margin:0 0 6px; font-size:14.5px; color:var(--ink);}
+  .trigger-card .tsub{font-size:11px; color:var(--gold); text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; font-family:var(--mono);}
+  .trigger-card p{margin:6px 0; font-size:13px; color:var(--ink-dim);}
+
+  .toc{background:var(--paper); border:1px solid var(--line-strong); border-radius:6px; padding:20px 24px; margin:30px 0;}
+  .toc a{color:var(--ink-dim); text-decoration:none; font-size:13.5px; display:block; padding:4px 0;}
+  .toc a:hover{color:var(--accent);}
+  .toc-grid{display:grid; grid-template-columns:1fr 1fr; gap:2px 20px;}
+  @media (max-width:640px){.toc-grid{grid-template-columns:1fr;}}
+
+  .diamond{color:var(--gold);}
+  .footnote{font-size:12.5px; color:var(--ink-faint);}
+  footer{padding:50px 24px; text-align:center; color:var(--ink-faint); font-size:12.5px; font-family:var(--mono);}
+  .two-col{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  @media (max-width:720px){.two-col{grid-template-columns:1fr;}}
+
+  /* ===== Hero Timeline ===== */
+  .hero-tl{position:relative; padding:50px 10px 30px; overflow-x:auto;}
+  .hero-tl-inner{position:relative; min-width:1560px; height:480px;}
+  .htl-detail{margin-top:16px; padding:16px 20px; background:var(--paper-alt); border:1px solid var(--line-strong); border-radius:6px; font-size:13.5px; color:var(--ink-dim); display:none; line-height:1.7;}
+  .htl-detail.show{display:block;}
+  .htl-detail h4{margin:0 0 8px; font-size:14.5px; color:var(--ink); font-weight:650;}
+  .htl-detail .yrtag{font-family:var(--mono); font-size:11.5px; color:var(--accent); margin-right:8px;}
+  .htl-axis{position:absolute; left:0; right:0; bottom:70px; height:2px; background:var(--ink-faint);}
+  .htl-tick{position:absolute; bottom:66px; width:1px; height:10px; background:var(--ink-faint);}
+  .htl-tick-label{position:absolute; bottom:44px; font-size:11px; color:var(--ink-faint); font-family:var(--mono); transform:translateX(-50%);}
+  .htl-dot{position:absolute; bottom:65px; width:8px; height:8px; border-radius:50%; background:var(--paper); border:2px solid var(--ink-faint); transform:translate(-50%,50%);}
+  .htl-dot.now{background:var(--accent); border-color:var(--accent);}
+  .htl-band{position:absolute; bottom:60px; height:5px; background:var(--paper-deep); border-radius:3px;}
+  .htl-band.current{background:var(--accent-soft);}
+  .htl-band-label{position:absolute; bottom:32px; font-size:11.5px; color:var(--ink-faint); text-align:center; width:140px; transform:translateX(-50%); line-height:1.4;}
+  .htl-band-label b{display:block; color:var(--ink-dim); font-size:12px;}
+  .htl-card{position:absolute; width:170px; background:var(--paper); border:1px solid var(--ink); border-radius:3px; padding:8px 12px; font-size:12.5px; transform:translateX(-50%); cursor:pointer; transition:box-shadow .15s, transform .15s; z-index:2;}
+  .htl-card:hover{box-shadow:0 3px 10px rgba(60,50,30,0.18); transform:translateX(-50%) translateY(-2px);}
+  .htl-card.selected{box-shadow:0 0 0 2px var(--accent);}
+  .htl-card .yr{font-family:var(--mono); font-size:11px; color:var(--ink-faint); display:flex; justify-content:space-between;}
+  .htl-card .ev{color:var(--ink); font-weight:600; margin-top:2px;}
+  .htl-card.crisis{border-color:var(--red);}
+  .htl-card.crisis .yr{color:var(--red);}
+  .htl-card.crisis .ev{color:var(--red);}
+  .htl-card.now{border-color:var(--accent); border-style:solid; color:var(--accent);}
+  .htl-card.now .yr, .htl-card.now .ev{color:var(--accent);}
+  .htl-card.future{border-style:dashed;}
+  .htl-line{position:absolute; width:1px; background:var(--line-strong);}
+
+  /* ===== Decade accordion ===== */
+  .decade-row{display:grid; grid-template-columns:repeat(5,1fr); gap:0; border:1px solid var(--line-strong); border-radius:6px; overflow:hidden; background:var(--paper); margin-top:20px;}
+  .decade-col{padding:20px 16px; border-right:1px solid var(--line); cursor:pointer; transition:background .15s;}
+  .decade-col:last-child{border-right:none;}
+  .decade-col:hover{background:var(--paper-alt);}
+  .decade-col.active{background:var(--accent-soft);}
+  .decade-col .dy{font-family:var(--mono); font-size:11px; color:var(--ink-faint); letter-spacing:.05em;}
+  .decade-col.active .dy{color:var(--accent);}
+  .decade-col .dt{font-size:14.5px; font-weight:650; margin:6px 0 10px; color:var(--ink); min-height:40px;}
+  .decade-col.active .dt{color:var(--accent-dark);}
+  .decade-col .dicon{width:34px; height:34px; opacity:.6;}
+  .decade-col .dexp{font-size:11px; font-family:var(--mono); color:var(--ink-faint); margin-top:10px; letter-spacing:.06em;}
+  .decade-col.active .dexp{color:var(--accent);}
+  .decade-panel{display:none; padding:20px 24px; border-top:1px solid var(--line-strong); background:var(--paper-alt);}
+  .decade-panel.show{display:block;}
+  .decade-panel .dp-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  @media (max-width:640px){.decade-panel .dp-grid{grid-template-columns:1fr;}}
+  .dp-item h5{margin:0 0 4px; font-size:14px; color:var(--ink);}
+  .dp-item p{font-size:13px; margin:0; color:var(--ink-dim);}
+  .dp-item .arrow{color:var(--accent);}
+
+  /* ===== Transmission chain ===== */
+  .trans-wrap{position:relative;}
+  .trans-labels{display:flex; justify-content:space-between; font-size:11px; font-family:var(--mono); color:var(--ink-faint); margin-top:6px; padding:0 20px;}
+
+  /* ===== Lifelines gantt ===== */
+  .gantt{margin-top:10px;}
+  .gantt-row{display:grid; grid-template-columns:230px 1fr; align-items:center; gap:10px; padding:5px 0; font-size:12.5px;}
+  .gantt-name{color:var(--ink-dim); text-align:right; padding-right:6px;}
+  .gantt-track{position:relative; height:18px; background:transparent;}
+  .gantt-bar{position:absolute; height:8px; border-radius:4px; top:5px;}
+  .gantt-end{position:absolute; top:0; font-size:11px; color:var(--ink-faint); font-family:var(--mono); white-space:nowrap;}
+  .gantt-marker{position:absolute; top:2px; width:14px; height:14px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;}
+  .gantt-section{font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin:18px 0 6px; padding-left:6px;}
+  .gantt-axis-row{display:grid; grid-template-columns:230px 1fr; gap:10px; padding-bottom:8px; margin-bottom:6px; border-bottom:1px solid var(--line-strong);}
+  .gantt-axis-track{position:relative; height:20px;}
+  .gantt-axis-tick{position:absolute; top:0; font-size:11px; font-family:var(--mono); color:var(--ink-faint); transform:translateX(-50%);}
+  .gantt-axis-tick i{display:block; width:1px; height:6px; background:var(--line-strong); margin:0 auto 3px;}
+
+  /* ===== consolidation flow ===== */
+  .flow-svg{width:100%; height:auto;}
+
+  /* ===== radar wheel ===== */
+  .wheel-wrap{display:flex; gap:30px; align-items:center; flex-wrap:wrap;}
+  .wheel-legend{flex:1; min-width:220px;}
+  .wheel-legend-item{display:flex; align-items:center; gap:8px; margin-bottom:10px; font-size:13px;}
+  .wheel-dot{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
+  .wheel-legend-item b{color:var(--ink);}
+  .wheel-legend-item span.phase{color:var(--ink-faint); font-size:11px; font-family:var(--mono); display:block;}
+
+  /* ===== per-GW dot matrix ===== */
+  .pergw-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:0; border-top:1px solid var(--line-strong); margin-top:12px;}
+  .pergw-panel{padding:18px 14px; border-right:1px solid var(--line); text-align:center;}
+  .pergw-panel:last-child{border-right:none;}
+  .pergw-panel h5{font-family:var(--mono); font-size:11px; letter-spacing:.06em; color:var(--ink-faint); margin:0 0 14px; text-transform:uppercase;}
+  .dotgrid{display:inline-grid; grid-template-columns:repeat(8,7px); gap:3px; margin:6px 0;}
+  .dotgrid span{width:7px; height:7px; border-radius:50%; background:var(--ink-faint);}
+  .dotgrid.blue span{background:var(--blue);}
+  .pergw-val{font-size:15px; font-weight:700; color:var(--ink); margin-top:6px;}
+  .pergw-lab{font-size:11.5px; color:var(--ink-faint); margin-top:2px;}
+  .pergw-bars{display:flex; align-items:flex-end; justify-content:center; gap:20px; height:120px;}
+  .pergw-bar-col{display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;}
+  .pergw-bar{width:38px; border-radius:3px 3px 0 0;}
+  .pergw-bar-label{font-size:11px; color:var(--ink-faint); margin-top:6px; font-family:var(--mono);}
+
+  /* ===== four-gate ladder ===== */
+  .ladder-row{display:grid; grid-template-columns:44px 1fr 200px 150px 110px; gap:14px; align-items:center; padding:16px 0; border-bottom:1px solid var(--line);}
+  .ladder-row:last-child{border-bottom:none;}
+  .ladder-rank{font-size:26px; font-weight:700; color:var(--ink-faint); text-align:center;}
+  .ladder-rank.r1{color:var(--red);}
+  .ladder-gate h5{margin:0 0 4px; font-size:14.5px; color:var(--ink);}
+  .ladder-gate p{margin:0; font-size:12.5px; color:var(--ink-dim);}
+  .score-blocks{display:flex; gap:2px;}
+  .score-blocks span{width:14px; height:14px; border:1px solid var(--blue); border-radius:2px;}
+  .score-blocks span.filled{background:var(--blue);}
+  .score-num{font-family:var(--mono); font-size:11px; color:var(--ink-faint); margin-top:4px;}
+  .bypass-tag{font-size:11.5px; color:var(--blue); display:block;}
+  .basecons{font-size:11.5px; color:var(--ink-dim); line-height:1.5;}
+  @media (max-width:820px){.ladder-row{grid-template-columns:1fr; text-align:left;}}
+
+  /* ===== CoWoS towers ===== */
+  .tower-row{display:flex; align-items:flex-end; justify-content:space-around; height:220px; padding:20px 10px 0; gap:10px;}
+  .tower-col{display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;}
+  .tower-val{font-size:13px; font-weight:700; color:var(--ink); margin-bottom:4px;}
+  .tower-mult{font-size:10.5px; color:var(--ink-faint); margin-bottom:6px; font-family:var(--mono);}
+  .iso-tower{width:56px; position:relative;}
+  .iso-front{background:var(--blue); border:1px solid var(--blue);}
+  .iso-front.forecast{background:var(--blue-soft); border:1px dashed var(--blue);}
+  .tower-label{font-size:11px; color:var(--ink-faint); margin-top:8px; font-family:var(--mono);}
+
+  /* ===== HBM stack ===== */
+  .hbm-row{display:flex; align-items:flex-end; justify-content:space-around; gap:16px; padding:20px 0;}
+  .hbm-col{display:flex; flex-direction:column; align-items:center;}
+  .hbm-slab{width:56px; height:12px; background:var(--blue-soft); border:1px solid var(--blue); border-radius:2px; margin-bottom:2px;}
+  .hbm-slab.top{background:var(--blue);}
+  .hbm-label{font-size:12px; color:var(--ink); font-weight:600; margin-top:8px;}
+  .hbm-sub{font-size:11px; color:var(--ink-faint); font-family:var(--mono);}
+  .hbm-bars{display:flex; flex-direction:column; gap:20px; flex:1; min-width:220px;}
+  .hbm-bar-item .lab{font-size:12px; color:var(--ink-faint); margin-bottom:4px; font-family:var(--mono);}
+  .hbm-bar-track{background:var(--paper-alt); border-radius:4px; height:26px; position:relative; overflow:hidden;}
+  .hbm-bar-fill{height:100%; background:var(--blue); border-radius:4px; display:flex; align-items:center; justify-content:flex-end; padding-right:8px; color:#fff; font-size:12px; font-weight:700;}
+  .hbm-flex{display:flex; gap:30px; flex-wrap:wrap; align-items:center;}
+
+  /* ===== power bars ===== */
+  .power-flex{display:grid; grid-template-columns:1fr 1fr; gap:26px;}
+  @media (max-width:720px){.power-flex{grid-template-columns:1fr;}}
+  .power-bar-item{margin-bottom:18px;}
+  .power-bar-item .plab{display:flex; justify-content:space-between; font-size:13px; color:var(--ink); font-weight:600; margin-bottom:4px;}
+  .power-bar-track{background:var(--paper-alt); border-radius:4px; height:20px;}
+  .power-bar-fill{height:100%; background:var(--accent); border-radius:4px;}
+  .power-note{font-size:11.5px; color:var(--ink-faint); margin-top:3px;}
+  .mech-stat{border-top:1px dashed var(--line-strong); padding:12px 0;}
+  .mech-stat .mv{font-size:20px; font-weight:700; color:var(--accent);}
+  .mech-stat .ml{font-size:12.5px; color:var(--ink-dim);}
+  .mech-arrow{font-size:13px; margin:6px 0;}
+  .mech-arrow.up{color:var(--green);}
+  .mech-arrow.down{color:var(--red);}
+
+  /* ===== comparison matrix ===== */
+  .matrix-legend{display:flex; gap:16px; font-size:12px; color:var(--ink-dim); margin-bottom:14px; flex-wrap:wrap;}
+  .matrix-legend span{display:inline-flex; align-items:center; gap:6px;}
+  .swatch{width:14px; height:14px; border-radius:2px; display:inline-block;}
+  td.cell-blue{background:var(--blue-soft);}
+  td.cell-partial{background:repeating-linear-gradient(45deg, var(--blue-soft), var(--blue-soft) 4px, var(--paper) 4px, var(--paper) 8px);}
+  td.cell-grey{background:var(--grey-soft);}
+  .badge-tag{display:inline-block; border:1px solid var(--blue); color:var(--blue); font-size:11px; padding:2px 8px; border-radius:3px; font-family:var(--mono);}
+
+  /* ===== concentration dual ===== */
+  .conc-flex{display:grid; grid-template-columns:1fr 1fr; gap:30px;}
+  @media (max-width:640px){.conc-flex{grid-template-columns:1fr;}}
+  .conc-title{font-size:12px; font-family:var(--mono); color:var(--ink-faint); margin-bottom:10px; text-transform:uppercase; letter-spacing:.04em;}
+  .conc-bars{display:flex; align-items:flex-end; gap:14px; height:140px;}
+  .conc-col{display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; flex:1;}
+  .conc-val{font-size:12px; font-weight:700; color:var(--ink); margin-bottom:4px;}
+  .conc-bar{width:100%; border-radius:3px 3px 0 0; background:var(--green);}
+  .conc-bar.hi{background:var(--accent);}
+  .conc-bar.forecast{background:var(--paper-deep); border:1px dashed var(--ink-faint);}
+  .conc-x{font-size:10.5px; color:var(--ink-faint); margin-top:6px; font-family:var(--mono);}
+  .conc-note{font-size:11px; color:var(--ink-faint); margin-top:8px;}
+</style>
+</head>
+<body>
+
+<header class="cover">
+  <div class="eyebrow">Inference Silicon · 1985 – 2026 · Cycle Reconstruction × Sector Deep Dive</div>
+  <h1 class="title">四十二年推理硅征程<br>这一次，会不同吗？</h1>
+  <p class="subtitle">从1985年Xilinx XC2064到2026年TPU v8，谁来供应定制计算的争夺已持续四十年。三代挑战者入场，两波出清席卷而过，退出的语法从未改变：并购，而非破产。本报告将四十二年切成六个窗口，重建每个窗口当时可知的信息，并追问一个问题——2023–2026年的推理算力繁荣，是旧周期的重演，还是新约束下的新周期？</p>
+  <div class="kf-grid">
+    <div class="kf-chip">存续记录</div>
+    <div class="kf-chip">最接近的历史类比</div>
+    <div class="kf-chip">当前周期</div>
+    <div class="kf-chip">两种情景</div>
+    <div class="kf-chip">三个大胆假设</div>
+    <div class="kf-chip">8个触发器</div>
+  </div>
+  <div class="cover-meta">交互研究版 · 六个窗口, 1985–2026 · 24条一手引述, 7条全文呈现 · 每个数字均可溯源 · 仅供参考，非投资建议</div>
+</header>
+
+<div class="wrap">
+<div class="toc">
+  <div class="toc-grid">
+    <a href="#s1">§1 · 摘要总览</a>
+    <a href="#s2">§2 · 存续 · 1975–2026</a>
+    <a href="#s3">§3 · 窗口一 · 1985–1995</a>
+    <a href="#s4">§4 · 窗口二 · 1995–2003</a>
+    <a href="#s5">§5 · 窗口三 · 2004–2012</a>
+    <a href="#s6">§6 · 窗口四 · 2013–2018</a>
+    <a href="#s7">§7 · 窗口五 · 2019–2022 + 挖矿镜像</a>
+    <a href="#s8">§8 · 窗口六 · 2023–2026</a>
+    <a href="#s10a">S10 · 三个大胆假设</a>
+    <a href="#s9">§9 · 结论</a>
+    <a href="#s10">§10 · 监测</a>
+    <a href="#s11">§11 · 公司深度剖析</a>
+    <a href="#app">附录 · 数据来源与方法</a>
+  </div>
+</div>
+</div>
+
+<!-- §1 -->
+<section id="s1">
+<div class="wrap">
+  <div class="sec-label">§1 · Executive Summary</div>
+  <h2>这一次，会不同吗？</h2>
+  <p class="lede">需求最像1995–2000年的光通信繁荣，但约束已从晶圆厂转移到内存、封装和电网。这是历史记录中最接近的类比——但没有真正的先例。</p>
+
+  <p>把2023–2026年的推理算力繁荣放进一个四十二年的坐标系，只有一个时期押韵：1995–2000年的光通信。非线性需求点火（NVIDIA数据中心业务13个季度增长17.6倍）、硬性供给约束（当年是90nm晶圆产能，如今是CoWoS——台积电的芯片堆叠先进封装——以及HBM，堆叠在AI处理器旁的高带宽内存），以及一批通过整合出清的初创公司群体。在那种机制下，峰值之后是两到三年的营收重置；FPGA（现场可编程门阵列）双寡头各自下跌39%。</p>
+
+  <p>然而，本轮周期有三个特征在历史记录中没有先例。需求集中在四到五家超大规模云买家手中，而电信繁荣时期则分散在数百家运营商中。约束已从芯片供给前移至电力和数据中心外壳的交付。而且，把关者本身正在管理闸门：台积电正以罕见的克制扩产——一套"纪律严明、周密细致的产能规划体系"，与"我们的客户以及客户的客户"紧密规划产能（2025年第一季度财报电话会），"在业务规划上保持审慎"，供给预计将在2027年前"非常紧张"，定价"具战略性而非机会主义，以体现我们的价值"，且不偏袒任何客户（2025年第四季度与2026年第一季度电话会）。当被问及AI需求是否真实时，魏哲家的回答是"我对此也非常紧张……如果我们不谨慎处理，这对台积电来说肯定是一场大灾难"——这是一个刻意在供需之间寻求平衡、与客户共享上行空间而非争相涌入市场的供应商。2001年式的全球同步下行不再是唯一模板◆。</p>
+
+  <p>三个大胆假设支撑着共识判断：利润率跟随硅片走、繁荣将走向广泛化、需求可见度延伸至2028年。本报告对这三者逐一压力测试（S10）：第一个假设在利润率证据面前不成立，第二个假设方向相反——客户数量在增加，但集中度也在上升，第三个假设为时过早。</p>
+
+  <p>补充一笔，本着充分披露的精神：历史上最畅销的ASIC家族并不在本报告涉及的任何数据中心里——它就在你的口袋里。苹果的A系列是应用专用硅片，它从未需要赢得一个市场，只需要赢得一个产品周期；我们将其排除在外，理由是它"成功到不足以被视为周期性资产"。</p>
+
+  <div class="chart-card">
+    <div class="cc-title">四十二年，一条时间轴</div>
+    <div class="cc-sub">阴影 = 六个窗口 · 蓝色 = 当前窗口 · 红色 = 一次断裂</div>
+    <div class="hero-tl"><div class="hero-tl-inner" id="heroTimeline"></div></div>
+    <div class="htl-detail" id="heroDetail"></div>
+    <div class="cc-src">来源：Kimi Research</div>
+  </div>
+
+  <h3>逐十年，定制计算</h3>
+  <p class="cc-note">蓝色眉标 = 当前十年 · 点击一列展开该十年的产品与信源</p>
+  <div class="decade-row" id="decadeRow"></div>
+  <div class="decade-panel" id="decadePanel"></div>
+
+  <h3>周期传导链：一次浪潮，六十六年间被放大六倍</h3>
+  <div class="chart-card">
+    <div class="cc-title">传导链</div>
+    <div class="cc-sub">振幅 ×1 → ×4 · 红色 = 断裂点</div>
+    <div class="trans-wrap" id="transChain"></div>
+    <div class="cc-src">来源：Kimi Research</div>
+  </div>
+
+  <p>我们对当前所处位置的判断：军备竞赛阶段。营收族证据（NVIDIA数据中心业务同比+92%；设计服务量出现拐点）与产能族证据（CoWoS依然紧张；设备预测被上修）指向同一个方向——扩张仍在延续。速度本身就是历史级别的极端：前四大云厂商2026年资本开支指引在六个月内从+34%修正到约+70%——这一速度本身应被视为一个需要承保的风险变量，而不仅仅是好消息◆。2000年剧本中最具前瞻性的证据族——订单与取消行为——在今天的长期预付合约下已结构性地不可见。这是本轮周期的结构性特征，而非一个更好的信息披露就能弥补的空白。</p>
+
+  <p>在四大云厂商中，资本开支的增速大约是经营现金流增速的2.3倍，且已连续两年如此（+55%/+64% 对比 +31%/+23%）。缺口已从利润表转移到资本市场。亚马逊单季发行了534亿美元的长期债务（2026年第一季度，余额升至1191亿美元）；Meta在2025年11月出售了300亿美元债券，2026年4月再发行250亿美元；Alphabet走得更远——2026年6月完成约850亿美元的股权融资（伯克希尔的定向配售、承销发行以及一项市价发行计划），叠加一轮债券发行，使其备考债务超过1000亿美元。靠自由现金流自我造血已不再是默认选项；这轮建设现在明确地依赖外部融资。考虑到资本开支/现金流比率实际存在约1.0–1.1倍的上限，资本开支增速最终必须向现金流增速的25–30%收敛。这一水平比维持基准情形成立所需的+14%门槛要高不少，但远低于2026年指引所隐含的约+70%——这是对增速的约束，而非见顶信号◆。判断保持开放；框架可执行：两种情景、数字化触发器，以及八个每季度复核的证伪触发器（§9–10）。</p>
+</div>
+</section>
+
+<!-- §2 -->
+<section id="s2">
+<div class="wrap">
+  <div class="sec-label">§2 · Survivorship · 1975–2026</div>
+  <h2>三代人，一套出清语法</h2>
+  <p class="lede">三代定制计算领导者崛起又被取代，每一代都被下一代供给模式所替代。幸存者靠软件工具链取胜，而非靠硅片本身。</p>
+
+  <p>1990年全球半导体仅增长+1.8%——这不是衰退，只是增长停滞——但已足以淘汰六家可编程逻辑初创公司中的四家。2004–2012年间，四家挑战者以更优架构攻击双寡头格局；无一突围——Tabula在烧掉2.14亿美元后关闭，而《华尔街日报》早在其融资高峰期就已指出这一风险。对于2016年那批AI芯片独角兽而言，结局如今大体已定：Graphcore卖给了软银，Groq与NVIDIA达成许可与人才协议（据媒体报道价值约200亿美元），Habana在输掉软件生态之争前被并入英特尔。</p>
+
+  <div class="chart-card">
+    <div class="cc-title">生命线：三代定制计算玩家，1975–2026</div>
+    <div class="cc-sub">每条线 = 一家公司的存续期间 · × 解散 · → 收购 · ◆ IPO · ● 独立</div>
+    <div class="gantt" id="lifelines"></div>
+    <div class="cc-src">来源：Kimi Research</div>
+  </div>
+
+  <h3>整合流向：每一位挑战者最终去了哪里</h3>
+  <div class="chart-card">
+    <div class="cc-title">整合流向图</div>
+    <div class="cc-sub">线宽 ≈ 交易规模 · 虚线 = 据报道，尚未落地 · ✕ = 已解散</div>
+    <div id="flowChart" style="overflow-x:auto;"></div>
+    <p class="cc-note">AMD ×2 计入Xilinx（$49B, 2020–22）与Pensando（$1.9B, 2022，数据中心DPU/智能网卡厂商）；Intel ×3 计入Altera、eASIC、Habana；Microchip ×2 计入Actel/Microsemi、Atmel；Lattice ×2 计入AMD PLD division（经Vantis）、SiliconBlue。</p>
+    <div class="cc-src">来源：Kimi Research</div>
+  </div>
+
+  <p>解读这份记录的正确方式，不是数退出的数量，而是研究幸存者的共同点：选择变量从来不是技术路线——反熔丝与SRAM都产生了阵亡者——而是软件工具链及其生态。"护城河是软件"这一判断在四十年里已被验证三次；最近一次验证出现在2024年，当时英特尔将Gaudi的表现不及预期归因于软件易用性不足。图表中只有一起真正的破产案例（Wave Computing）——出清机制始终是并购，从来如此。挖矿ASIC群体以更快的速度遵循了同样的语法：Butterfly Labs被监管机构关停，Canaan上市后估值崩塌，比特大陆的香港上市申请失效——三者中同样没有一个以领军企业级别的破产收场。</p>
+</div>
+</section>
+
+<!-- §3 -->
+<section id="s3">
+<div class="wrap">
+  <div class="sec-label">§3 · 窗口一 · 1985–1995</div>
+  <h2>"更好的ASIC"：定位即战略</h2>
+  <p class="lede">XC2064仅有64个逻辑块——1000到1500个可用门——但其发布通稿从未提及"PLD"（可编程逻辑器件）一词。定位就是战略。</p>
+
+  <blockquote class="quote">
+    <p class="qtext">"逻辑单元阵列提供了其他ASIC所具备的一切好处……却没有其中的时间、成本与风险代价。"</p>
+    <div class="qmeta">
+      <b>Xilinx XC2064发布通稿（经Xcell #81 / EEJournal双重信源校验）· 1985-11-01</b>
+      背景：1985年11月1日的发布通稿，由Regis McKenna操刀。原件未被数字化；文字内容经由Xilinx官方Xcell #81与EEJournal两个独立转载版本逐字校验。<br>
+      为何重要：这是"可编程 vs 门阵列"之争的宣战书：新产品没有把自己定位为更好的PLD，而是直接定位为更好的ASIC。四十年后，云厂商自研AI芯片的宣传语在结构上是同一句话。
+    </div>
+  </blockquote>
+
+  <p>四十年后重读1985年的这份发布稿颇具启发：如今云厂商为自研AI芯片打出的宣传语——摆脱通用芯片的成本与功耗代价——在结构上与Xilinx对抗ASIC（应用专用集成电路，即为单一用途设计的芯片，也是FPGA当年对抗的对象）的宣言完全相同。每一代挑战者都把自己包装成"在位者的更好版本"。</p>
+
+  <p>要立足，首先要挺过第一轮筛选。1990–91年的增长停滞完成了第一轮出清；到1994年，四家领先企业占据了可编程逻辑市场64%的份额（高密度部分为80%）。Dataquest的账本同样直白：PLD营收13.1亿美元，对比ASIC营收133.1亿美元——十倍的规模差距，战争远未结束。真正预示了结局的一句话是："传统ASIC供应商正在放弃两万门以下的市场。"新技术总是从在位者不屑防守的细分市场切入——今天，这个细分市场的名字叫"推理"。</p>
+</div>
+</section>
+
+<!-- §4 -->
+<section id="s4">
+<div class="wrap">
+  <div class="sec-label">§4 · 窗口二 · 1995–2003</div>
+  <h2>−39%：同一次冲击，四道不同的伤疤</h2>
+  <p class="lede">光通信在五年内让Xilinx营收翻了三倍；随后双寡头在2001年同步下跌39%。这个窗口是"同一剧本"情景的模板。</p>
+
+  <p>从FY1996到FY2001，Xilinx营收从5.6亿美元增长到16.59亿美元，Altera从4.02亿美元增长到13.77亿美元。互联网容量焦虑首次将可编程逻辑推向行业中心——到2000年，Altera 67%的营收来自通信行业。繁荣越集中，衰退就越同步：设备厂商用不可取消订单锁定产能，并在恐慌中重复下单，在供应链每一环放大需求信号◆。</p>
+
+  <div class="stat-row">
+    <div class="stat"><div class="num">−38.8%</div><div class="lab">Xilinx，2001年</div></div>
+    <div class="stat"><div class="num">−39.0%</div><div class="lab">Altera，2001年</div></div>
+    <div class="stat"><div class="num">−48%</div><div class="lab">Lattice，2001年</div></div>
+    <div class="stat"><div class="num">−35%</div><div class="lab">LSI，亏损9.6亿美元</div></div>
+  </div>
+
+  <p>崩盘的数字值得铭记：一次冲击，四道不同的伤疤，以及行业−32%的一年——当时历史最差纪录。时间轴上最重要的教训是：纳斯达克在2000年3月见顶；Xilinx的订单冻结出现在FY2001第一季度——滞后九到十二个月。股价不是领先指标，订单行为才是。</p>
+
+  <p>从谷底中生长出来的不是耐心，而是成本领先。结构化ASIC承诺兼具两者之长，却被90nm经济学碾压（三次尝试，两次失败，一位幸存者）。真正的答案出现在2003年，当时Xilinx出货了首款90nm/300mm FPGA——一百万门，售价12美元——把一场危机转化为一张制程节点的门票。这一招在后续窗口中反复出现。</p>
+
+  <p>这个价格点的含义值得说明白：在12美元的价位上，一百万门不再是数据中心部件，而变成了消费品部件。Xilinx自己为Spartan-3列出的目标清单读起来像一份客厅清单——机顶盒和个人录像机、DVD-RW播放器、LCD和高清电视、视频点播设备、家用网关和低成本路由器——再加上存储服务器、医疗与工业成像，以及面向汽车市场推出的嵌入式MicroBlaze软核。一年之内，该系列已向1200多家客户出货了一百万颗芯片。它所颠覆的那颗ASIC，不再是稀有硅片，而是普通货架上电器里的芯片。</p>
+</div>
+</section>
+
+<!-- §5 -->
+<section id="s5">
+<div class="wrap">
+  <div class="sec-label">§5 · 窗口三 · 2004–2012</div>
+  <h2>先部署，后披露</h2>
+  <p class="lede">表面上是八年的平淡；水面之下，异构计算时代早已在生产环境中运行——只是没人被告知。</p>
+
+  <p>从FY2004到FY2012，双寡头的营收几乎原地踏步，而现金流被转化为一张张制程节点的门票——2011年10月，两家公司均声称自己是首个进入台积电28nm量产的客户。挑战者群体再度开启又再度关闭：四家拥有更优架构的公司，无一突围。护城河从来不是芯片，而是工具链。</p>
+
+  <p>水面之下的故事截然不同。微软的Project Catapult在2012年底悄悄将1,632台FPGA服务器接入必应的生产网络，两年后才对外披露。在固定延迟下，排序吞吐量提升了95%——而当时2012年的行业共识却是，数据中心与FPGA毫无关系。组织内部的阻力同样真实：</p>
+
+  <blockquote class="quote">
+    <p class="qtext">"微软去编程芯片，就像可口可乐去做鱼翅汤一样。"</p>
+    <div class="qmeta">
+      <b>Wired专题报道（回顾Burger 2012年12月向Ballmer所做的Catapult提案）· 2016-09-25</b>
+      背景：Wired在2016年的回顾报道：2012年12月，当Doug Burger向微软管理层推介Catapult时，一位高管用这句话概括了他的怀疑。<br>
+      为何重要：组织性阻力是异构计算萌芽阶段真实存在的代价。这句话被标注为"事后之明"，因为它直到2016年才浮出水面——2012年底的决策者们并不知道自己正被历史记录。
+    </div>
+  </blockquote>
+
+  <div class="chart-card">
+    <div class="cc-title">潜藏的时间轴：披露日期 vs 实际部署（2012–2018）</div>
+    <div class="cc-sub">水面 = 公开记录 · 水下 = 实际部署</div>
+    <div id="submergedChart" style="overflow-x:auto;"></div>
+    <div class="cc-src">来源：Kimi Research</div>
+  </div>
+
+  <p>"先部署，后披露"是本报告的核心方法论发现之一：在这个行业里，可知的信息与真实情况之间存在系统性的一到两年滞后。在下一个窗口，同样的剧本会在Google身上重演。</p>
+</div>
+</section>
+
+<!-- §6 -->
+<section id="s6">
+<div class="wrap">
+  <div class="sec-label">§6 · 窗口四 · 2013–2018</div>
+  <h2>TPU与167亿美元支票：一道考题，两个答案</h2>
+  <p class="lede">Google在2015年就已部署了TPU（张量处理单元——其自研AI加速器）；行业到2016年才听说。同年，英特尔支付167亿美元收购Altera。自研 vs 收购——结果如今已揭晓。</p>
+
+  <blockquote class="quote">
+    <p class="qtext">"自2015年以来已在数据中心部署，用于加速神经网络（NN）的推理阶段。"</p>
+    <div class="qmeta">
+      <b>Jouppi、Young、Patterson等（ISCA 2017论文摘要，TPU作者团队）· 2017-04-16</b>
+      背景：2017年ISCA论文摘要中的一句话同时确立了两个事实：TPU v1早在2015年就已投入生产部署（披露却等到2016年5月的Google I/O大会），且它最初的定位就是纯粹的推理加速器。<br>
+      为何重要：推理ASIC浪潮的第零号证据——与Catapult如出一辙，真实部署再次比行业共识早了一年多。"先部署，后叙事"是本轮周期中每一个巨头共享的剧本。
+    </div>
+  </blockquote>
+
+  <p>点火的故事始于Google在2013年的内部测算：每位用户每天三分钟的语音搜索，就需要将其数据中心占地面积翻倍。路线当场分叉——Google评估并放弃了FPGA；微软四个月后加倍押注FPGA，推出了Brainwave。当时的主流共识是：</p>
+
+  <blockquote class="quote">
+    <p class="qtext">"GPU对机器学习来说太通用了。它本来就不是为此而生的。"</p>
+    <div class="qmeta">
+      <b>Urs Hölzle，Google数据中心基础设施负责人（Wired专访）· 2016-05-19</b>
+      背景：TPU于2016年5月公开发布后的第二天，Google基础设施负责人向Wired解释了Google为何要自研芯片——当时的主流判断是：GPU只是过渡方案，定制硅片才是终局。<br>
+      为何重要：本报告中"当时可知 vs 事后之明"张力最强的一例：这句话说出的那一刻，恰恰是NVIDIA数据中心业务百倍增长十年的起点。主流判断如此一致地失误，是周期研究中最好的反向指标样本。
+    </div>
+  </blockquote>
+
+  <p>——这几乎是历史记录所能提供的最干净的反向指标。英特尔的答案是支票簿：四年内四次收购——Altera、Nervana、Movidius、Mobileye——合计超过320亿美元。十年后：可编程解决方案部门三年内从17亿美元增长到21亿美元，Nervana被计提为零，Altera以87.5亿美元估值卖给了银湖资本，仅为收购价的一半略多。同一时期，CUDA把"太通用"的GPU变成了机器学习的默认答案。工具链而非晶体管，第二次决定了路线之争的胜负。</p>
+
+  <p>2016–2018年那批独角兽（Graphcore、Cerebras、Tenstorrent、Groq、Habana）在这个窗口里几乎保持沉默；最响亮的声音是寒武纪承诺三年内拿下30%的国内市场份额。后续的复盘是一致的：没有一家失败是因为"模型变了、芯片白做了"——真正的原因是押注了错误的稳定层、缺乏自有的工作负载，以及执行力不足。</p>
+
+  <p>TPU对Google的意义逐年加深。它是Google算力主权的基石——Google内部大量AI负载如今运行在TPU上，而这套硬件本身也拥有了外部客户：Anthropic已承诺从2027年起以千兆瓦规模使用TPU算力（5GW，原话见于博通财报电话会）。这一模板正超越Google本身扩散：OpenAI与博通签订了10GW的定制加速器框架协议，Meta则是到2028年底3GW◆。八代TPU跨越了三次范式转变——CNN、RNN、Transformer——这一记录是任何竞争对手单次流片都无法比拟的。S10中考察的单一买家集中度还有另一面：对Google自己而言，买家即平台——这是这十年最成功的垂直整合。</p>
+
+  <p>第八代产品让这种整合更加锐利——同时也让背后的供应商版图更加分散。券商研究认为v8t（训练）芯片是与博通联合设计，而v8i（推理）芯片则首次与联发科联合设计——同一家族，两种架构，两个设计伙伴。网络也随芯片分道扬镳：v8i采用Boardfly拓扑，将OCS（光电路交换）引入推理扩展规模——将一个1,024芯片舱的网络直径从16跳缩减到7跳，在通信密集型负载上将延迟改善多达50%——而v8t则搭载Virgo网络，券商研究测算这是一个单层网络结构，规模达13.4万颗芯片，单个训练集群超过百万颗TPU。这一走向具有战略意义，不仅仅是技术层面：Google正在主动分散其ASIC设计依赖，同时将光互连引入推理领域（券商研究）。</p>
+
+  <div class="chart-card">
+    <div class="cc-title">八代TPU：一个对数尺度的算力十年</div>
+    <div class="cc-sub">对数坐标 · 原生精度下的TOPS/TFLOPS · 2015–2026</div>
+    <div id="chartTPU"></div>
+    <div class="cc-src">来源：Kimi Research</div>
+  </div>
+  <p class="footnote">为何重要：市场对定制AI硅片最核心的担忧是时机——完整的ASIC周期（设计、流片、量产）需要18–24个月，可能跟不上模型架构更快的变化速度。八代TPU（2015–2026）是检验软硬件协同设计与工程压缩能否消化这一错配的最严苛实证。从这张图应判断三件事：迭代速度是否跟上了模型变化，协同设计是否缩短了周期，以及长周期定制硅片落后的风险有多大。matmul核心十年未变=稳定的算子层（吸收模型—硅片节奏错配的第一道缓冲）。</p>
+</div>
+</section>
+
+<!-- §7 -->
+<section id="s7">
+<div class="wrap">
+  <div class="sec-label">§7 · 窗口五 · 2019–2022</div>
+  <h2>许多时钟：短缺与并购超级周期</h2>
+  <p class="lede">108天内五笔十位数交易；四十年未见的短缺——以及五个拒绝同步运动的子周期。</p>
+
+  <p>云端自研硅片从补充角色变成主角：阿里巴巴的含光800、AWS Inferentia、TPU v4均进入量产，Habana以20亿美元卖给英特尔。2020年7月到10月间，五笔合计1150亿美元的交易在108天内被宣布。五笔中有四笔（AMD–Xilinx、ADI–Maxim、SK–英特尔NAND、Marvell–Inphi）在周期接近顶点时达成；第五笔，NVIDIA以400亿美元收购Arm，在多司法辖区审查下终止。并购是这个行业的常态退出与发展路径——但这一波交易的时机本身就是周期位置的一个标记，而非单向的看多或看空信号。监管是否为本轮周期设定了天花板，仍是一个悬而未决的问题——记录显示的是，在该交易终止之后，纯粹的收购让位于许可加人才的结构。</p>
+
+  <blockquote class="quote">
+    <p class="qtext">"在我进入半导体行业的40年里，我不记得供需失衡曾如此严重。"</p>
+    <div class="qmeta">
+      <b>Ganesh Moorthy，Microchip总裁兼CEO（FY2021第四季度财报发布）· 2021-05-06</b>
+      背景：2021年5月6日，Microchip在同一份财报发布稿中写下这句话，并同时宣布了PSP（优先供应计划）——客户以12个月不可取消订单换取供应优先权。<br>
+      为何重要：短缺超级周期中分量最重的一手证词。PSP的本质是把所有需求不确定性转嫁给客户——当2022年下半年需求逆转时，那些不可取消订单成了行业整体库存修正的导火索（Microchip的曲线显示了后果）。
+    </div>
+  </blockquote>
+
+  <p>制度性反应比短缺本身更重要：Microchip的优先供应计划以12个月不可取消订单换取交付优先权，一年之内积压订单中已有过半被锁定——不可取消订单被大规模制度化，与2000年电信设备厂商所用的工具如出一辙。</p>
+
+  <p>随后，2022年10月7日，一次披露就交出了结局：Graphcore披露全年营收270万美元，对应估值27.7亿美元。资本泡沫在被测量的当天就宣告破裂。</p>
+
+  <div class="chart-card">
+    <div class="cc-title">许多时钟：当前周期的五个子周期，处于不同阶段</div>
+    <div class="cc-sub">对当前周期的估测，非实测读数</div>
+    <div class="wheel-wrap">
+      <svg id="wheelSvg" width="320" height="320" viewBox="0 0 320 320"></svg>
+      <div class="wheel-legend" id="wheelLegend"></div>
+    </div>
+    <div class="cc-src">来源：公司披露、Kimi Research</div>
+  </div>
+
+  <h3>插叙 · 2017–2022 · 挖矿镜像</h3>
+  <p class="lede">加密货币孵化了定制硅片，随后又两次将其击溃</p>
+  <p>在TPU之前，还有哈希板：挖矿ASIC三年内从55nm冲到16nm FinFET（鳍式场效应晶体管——先进制程的3D晶体管架构），量产规模空前——两次加密寒冬在五年内两次教会了同一套周期语法。这是本行业保持周期性的最新证据。</p>
+  <p>孵化是真实的。2013–2017年的比特币挖矿浪潮是定制硅片第一次大规模市场演练：Butterfly Labs、Avalon与比特大陆在三年内从55nm冲到16nm FinFET，达到任何逻辑设计师都未曾见过的量级，台湾设计服务链条也在他们的订单上学会了这门生意——世芯电子（Alchip）FY2017的营收激增，广泛归因于比特大陆的挖矿项目（媒体报道）。这波浪潮甚至催生了一款超前于时代的AI芯片：比特大陆的Sophon BM1680（2017年）——一家挖矿公司推出的推理加速器——早于2016年那批AI芯片独角兽中几乎所有公司出货（Graphcore和Habana到2018年才出货）。</p>
+  <p>第一次崩盘是2001年那套语法的彩排。比特币在2017年12月见顶；矿工在整个冬天对GPU和哈希板重复下单；到2019年1月，NVIDIA将季度指引从27亿美元下调至22亿美元——部分归因于"加密货币宿醉"（渠道中过剩的中端库存），中国市场疲软也是原因之一——此前其股价已从10月的峰值下跌54%，台积电同月也下调了自身展望。世芯电子FY2018营收下降19%，正值比特大陆项目退潮。从价格见顶到订单冻结的传导：约十三个月——与2001年的九到十二个月相当◆。</p>
+  <p>第二次崩盘证明第一次并非偶然。2022年上半年，GUC（Global Unichip）的AI/ML板块首次成为其最大板块——与加密货币挂钩，随后几个季度内回落至2022年前九个月销售额的约五分之一（据其投资者关系资料；占比数字为图表推算，约数）。2022年8月，NVIDIA计提13.4亿美元库存减值，游戏业务营收环比下降44%；一个月后，以太坊合并彻底终结了GPU挖矿。同样的点火，同样的恐慌下单，同样的库存出清——公司层面的退出语法也一样：§2的语法，以加密货币的速度重演◆。</p>
+
+  <div class="chart-card">
+    <div class="cc-title">挖矿镜像：两次崩盘，一套语法</div>
+    <div class="cc-sub">2018–2023 · 两个崩盘周期</div>
+    <div id="miningMirror"></div>
+    <div class="cc-src">来源：公司披露、行业与官方数据、Kimi Research</div>
+  </div>
+
+  <div class="two-col">
+    <div class="chart-card">
+      <div class="cc-title">世芯电子（Alchip）特写：2018年加密货币的那颗"牙齿"</div>
+      <div class="cc-sub">年度营收，新台币十亿元 · FY2016–2019</div>
+      <div id="chartAlchip"></div>
+      <div class="cc-note" id="alchipNote"></div>
+      <div class="cc-src">来源：公司披露、券商研究</div>
+    </div>
+    <div class="chart-card">
+      <div class="cc-title">GUC：与加密货币挂钩的浪潮，逐季度</div>
+      <div class="cc-sub">季度营收，新台币十亿元 · 2016Q1–2019Q4</div>
+      <div id="chartGUC"></div>
+      <div class="cc-src">来源：公司披露</div>
+    </div>
+  </div>
+  <p class="footnote">一个值得记住的对比：世芯电子的业务偏向GPU式并行计算，而GUC偏向CPU侧——同样的设计服务模式，指向不同的工作负载。</p>
+
+  <p>三个教训延续到当前窗口。来自单一买家类别的集中需求，是最可靠的助燃剂，也是最可靠的导火索——无论买家是矿工、运营商，还是四家超大规模云厂商的董事会。就连赢家也难免受伤：NVIDIA扛住了两次加密货币崩盘并从中成长，设计服务业的锯齿状曲线是结构性的，而非个别公司的问题——世芯电子2018年的加密货币尾巴（−19%）与2025年的Trainium-2尾巴（−40.5%）是同一颗牙齿。加密货币之于2010年代，正如光通信之于2000年——一场真实的需求浪潮，最终止于库存，而非技术失败。这个类比传导的是库存语法，而非需求触发器。挖矿需求是价格衍生的——币价归零，地板就消失了；AI需求是工作负载衍生的。而加密货币的滞后期依托于一个公开、连续的价格信号，比2001年的私人订单簿更快更清晰——九到十三个月的区间是这个类比的边界，而非精确匹配。AI与两者共享的是点火形态；而它尚未展现的——目前为止——是底层工作负载的崩溃。这种不对称正是§9情景权衡的核心。</p>
+</div>
+</section>
+
+<!-- §8 -->
+<section id="s8">
+<div class="wrap">
+  <div class="sec-label">§8 · 窗口六 · 2023–2026</div>
+  <h2>需求、卖铲人，以及迁移中的约束</h2>
+  <p class="lede">一条13个季度内复合增长17.6倍的需求曲线；为每一个阵营流片的设计服务公司；以及一个把节拍器从晶圆厂搬到电网的约束。</p>
+
+  <h3>9a · 需求：尚未出现2000年秋天式的冻结</h3>
+  <p>NVIDIA的数据中心业务从2023年第一季度的42.8亿美元攀升至2026年第一季度的752亿美元——13个季度内增长17.6倍，其中ChatGPT发布两个季度后出现了环比+141%的拐点；管理层将其中约40%归因于推理。买方一侧，前四大云厂商2025年支出合计4129亿美元（+68%），2026年指引合计约6950–7250亿美元（+约70%）◆。对于2027年，目前仍没有公司层面的指引——只有第三方估算（穆迪：六家公司合计接近1万亿美元；富国银行：8600亿美元）——最大的数字恰恰立在最薄弱的披露基础上◆。</p>
+
+  <div class="chart-card">
+    <div class="cc-title">逐公司资本开支：FY2023–2026E</div>
+    <div class="cc-sub">十亿美元 · 按申报口径 · 亚马逊为总额 · Meta含租赁 · 微软为6月财年</div>
+    <div id="chartCapex"></div>
+    <div class="cc-src">口径为申报基础；券商综合口径更高（2025年约4130亿美元，野村证券），因其定义更宽泛。来源：公司披露</div>
+  </div>
+
+  <div class="chart-card">
+    <div class="cc-title">融资仪表盘：资本开支 ÷ 经营现金流（FY2023–TTM）</div>
+    <div class="cc-sub">比率 · FY=同年资本开支÷经营现金流 · TTM=滚动12个月，截至2026-03-31 · 红色=高于1.0</div>
+    <div id="chartCapexRatio"></div>
+    <div class="cc-src">来源：公司披露</div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat"><div class="num">~$420B</div><div class="lab">前四大CSP 2025年合计资本开支（同比+68%）</div><div class="src">来源：券商研究</div></div>
+    <div class="stat"><div class="num">$70–90B</div><div class="lab">ASIC（定制AI芯片）2027年市场空间锚定值，三源交叉</div><div class="src">来源：公司披露、券商研究</div></div>
+    <div class="stat"><div class="num">$73B+</div><div class="lab">博通AI在手订单（客户1→6）</div><div class="src">来源：公司披露</div></div>
+  </div>
+
+  <h3>9b · 第二波自研浪潮，与计量纪律</h3>
+  <p>第二波浪潮与第一波有本质不同：Ironwood、Trainium 3、Maia 200和MTIA v3是首批与NVIDIA芯片采用同一台积电制程世代、并从第一天起就为推理而设计的自研加速器。渗透率估算在方向上一致，但在口径上有分歧，取决于计量单位：CoWoS晶圆分配份额28→32%，而美元价值份额16→22–25%（至2027年，券商估算）。计量纪律：本报告的任何乘法计算只采用美元价值口径——混用口径会导致内容重复计算。</p>
+
+  <div class="chart-card">
+    <div class="cc-title">未曾发生的交叉：台积电AI营收按客户划分</div>
+    <div class="cc-sub">分析师估算，非公司确认 · 占台积电AI营收百分比 · 2025 vs 2027F</div>
+    <div class="conc-flex" style="margin-bottom:16px;">
+      <div>
+        <div class="conc-title">2025年构成</div>
+        <div class="hbm-bar-track" style="height:34px;"><div class="hbm-bar-fill" style="width:62.8%; background:var(--ink-faint); justify-content:flex-start; padding-left:8px;">GPU阵营 62.8%</div></div>
+      </div>
+      <div>
+        <div class="conc-title">2027F 构成（估算）</div>
+        <div class="hbm-bar-track" style="height:34px;"><div class="hbm-bar-fill" style="width:52.5%; background:var(--ink-faint); justify-content:flex-start; padding-left:8px;">GPU阵营 52.5%</div></div>
+      </div>
+    </div>
+    <div id="chartCrossover"></div>
+    <div class="cc-src">来源：券商研究</div>
+  </div>
+
+  <p>在市场争论GPU与自研ASIC孰优孰劣之际，为所有阵营流片的台湾设计服务双雄已经在赚这笔钱：GUC在2025年第四季度录得创纪录的新台币124亿元单季营收，2026年第一季度同比+62.9%；世芯电子2025年的−40.5%是同一个故事的一部分——是Trainium 2项目的尾声，因为设计服务本质上是项目制、锯齿状的业务（正是这颗牙齿在FY2018年因比特大陆退潮让世芯电子下跌了19%）——2nm项目已在设计中。</p>
+
+  <blockquote class="quote">
+    <p class="qtext">"主要客户亚马逊AWS已将其2nm设计提前，并希望在年底前完成设计定案。"（译自原文中文）</p>
+    <div class="qmeta">
+      <b>世芯电子业绩说明会，2026年3月（摩根士丹利研究转述）· 2026-03-23</b>
+      背景：在2026年3月的业绩说明会上，世芯电子管理层披露AWS已将其下一代自研芯片推进到2nm设计定案阶段——恰逢Trainium3（3nm）进入量产。<br>
+      为何重要：设计服务的前沿已从3nm量产推进到2nm定案：云端自研ASIC如今精确跟随商用GPU的制程节奏。2003年结构化ASIC因制程节点差距而落败的历史，这一次没有重演。
+    </div>
+  </blockquote>
+
+  <h3>9d · 深度剖析：为何节奏错配是可控的</h3>
+  <p>模型以月为单位迭代；芯片从设计到流片（把设计交付晶圆厂）需要数年。市场核心担忧是，完整的定制硅片周期——设计、流片、验证、量产——跟不上模型架构的变化。记录显示，这种错配被三层机制吸收：稳定的算子核心（矩阵乘法十年来一直锚定工作负载）、工程压缩（训练与推理分离的独立轨道将节奏压缩到约十二个月），以及系统层面的吸收（编译器与互连）。八代TPU跨越了CNN、RNN、Transformer三次范式转变，是现有最有力的证据（完整的八代记录见§6）。下图将领先阵营的单GW经济性并列呈现——为分析师估算，而非公司指引。</p>
+
+  <div class="chart-card">
+    <div class="cc-title">单GW经济性：花同一个吉瓦有两种方式</div>
+    <div class="cc-sub">每1GW建设 · 分析师估算</div>
+    <div class="pergw-grid" id="perGWPanel"></div>
+    <div class="cc-src">来源：券商研究</div>
+  </div>
+
+  <h3>9e · 深度剖析：四道供给闸门——利润池在闸门处，而非云端</h3>
+  <p>2023年底，约14,500片/月的CoWoS产能是行业的硬性约束；两年内产能扩大了六倍，台积电仍称其"非常紧张"——与2001年截然相反，当年产能一夜之间转为过剩。供给刚性排序：HBM > 先进制程 > CoWoS > 光互连——排序依据不是打分，而是是否存在绕行方案◆。</p>
+
+  <div class="chart-card">
+    <div class="cc-title">四道闸门的阶梯：刚性即排序</div>
+    <div class="cc-sub">区块 = 六问打分 · 实心 = 无绕行方案</div>
+    <div id="ladderPanel"></div>
+    <div class="cc-src">来源：券商研究</div>
+  </div>
+
+  <div class="chart-card">
+    <div class="cc-title">闸门三的实物形态：CoWoS月产能——两年六倍，依然"非常紧张"</div>
+    <div class="cc-sub">千片/月 · 虚线 = 预测</div>
+    <div class="tower-row" id="cowosTowers"></div>
+    <div class="cc-src">来源：公司披露、券商研究、行业与官方数据</div>
+  </div>
+
+  <p>HBM是情景敏感度最高的单一变量。三家内存厂商的产能三年内接近翻五倍，HBM4的价格锚定在每GB 15.4美元——而HBM4E在2027年完全没有价格锚定；没有锚定的这一年，恰恰是定价纪律最脆弱的一年。内存周期的历史上，从没有一次区块产能释放是温和收场的。当最终的约束是DRAM时，值得参照的镜子是内存周期本身。</p>
+
+  <div class="chart-card">
+    <div class="cc-title">HBM：从配角到DRAM营收的五分之二</div>
+    <div class="cc-sub">2023 vs 2026E · 世代堆叠（层数=Hi）</div>
+    <div class="hbm-flex">
+      <div class="hbm-row" id="hbmStack"></div>
+      <div class="hbm-bars" id="hbmBars"></div>
+    </div>
+    <div class="cc-src">营收约40–55亿美元（2023）→约460亿美元（2026E）。来源：行业与官方数据</div>
+  </div>
+
+  <h3>9f · 约束的最后一站：电网</h3>
+  <blockquote class="quote">
+    <p class="qtext">"这不是芯片供给的问题；而是我确实没有可以插电使用的暖壳（warm shells）。"</p>
+    <div class="qmeta">
+      <b>Satya Nadella，微软CEO（BG2播客，与Sam Altman对谈）· 2025-11-03</b>
+      背景：2025年11月，全球最大AI资本开支支出者的CEO在播客中承认，GPU堆在仓库里，却没有通电的机架可以插上。<br>
+      为何重要：本轮周期约束迁移最有力的第一手证词：当买家是微软，库存是GPU，而瓶颈是电力时，周期的节拍器已经从台积电的晶圆厂移到了电网调度室——这是1995–2000年从未出现过的结构。
+    </div>
+  </blockquote>
+
+  <p>国际能源署（IEA）预计到2030年数据中心用电量将达约945太瓦时——超过2024年415太瓦时的两倍，堪比日本全国用电量。一台GB200 NVL72机架功耗约120千瓦，大约是普通企业机架的十六倍。但电力是部署的节拍器，而非出货的节拍器——目前尚无经过量化的案例显示电力约束导致了芯片订单取消。它是"不同剧本"情景的核心变量，而非"同一剧本"情景的见顶信号。</p>
+
+  <div class="chart-card">
+    <div class="cc-title">最后一站：电力交付为建设定速</div>
+    <div class="cc-sub">GW · 命名吉瓦承诺（框架/接入，非新签供电合同）</div>
+    <div class="power-flex">
+      <div id="powerBars"></div>
+      <div id="powerMech"></div>
+    </div>
+    <div class="cc-src">来源：公司披露、行业与官方数据</div>
+  </div>
+</div>
+</section>
+
+<!-- S10 -->
+<section id="s10a">
+<div class="wrap">
+  <div class="sec-label">S10 · 深度剖析 · 对共识的压力测试</div>
+  <h2>三个大胆假设</h2>
+  <p class="lede">共识判断建立在三个论断之上：利润率跟随硅片走、繁荣走向广泛化、需求可见度延伸至2028年。证据分别给出的评级是：不成立、方向相反、为时过早。</p>
+
+  <h3>A1 · "利润率跟随硅片走"</h3>
+  <p>市场的交易逻辑（联发科+240%，GUC×3.5）：持有ASIC敞口就是持有算力经济性。营收确实真实——博通AI业务增长+143%至108亿美元，指引160亿美元◆——但利润率结构却反其道而行：花旗的模型显示定制硅片毛利率为62.5%，而非定制半导体为77%（FY26–28E），且稀释效应已经在兑现——AI占比上升的单一季度中，集团毛利率下滑约310个基点◆。量增利降不是一种风险情景；它就是当下这个季度。Marvell 64–66%的毛利率目标从未被明确撤回，只是被替换为"迈向约60%的路径"——此后公布的毛利率为：59.7% → 59.0% → 58.9%，被点名为增长引擎的是互连业务（毛利率>70%），而非定制硅片◆。设计服务业从下游印证了这一点：GUC 2025Q4毛利率19.0%，世芯电子在38.5% → 18.8% → 50.2%之间随产品结构剧烈摆动◆。（其中五个数字来自同一家银行的模型——花旗；方向而非具体数值才是关键论据。）</p>
+
+  <h3>A2 · "繁荣走向广泛化"</h3>
+  <p>论断是：客户数从1增加到6，读起来像是繁荣正超越单一买家而走向广泛化。但美元层面的证据方向相反：Google占博通营收的比例从8.6%升至16.2%再到24.3%，并持续向约40%（FY2026E）、约43%（FY2027E）、约47%（FY2028E）攀升（券商估算）——而第四大客户仅两个季度就承诺了超过210亿美元◆。客户增多通常应意味着集中度下降；在AI推理硅片领域，这一逻辑或许并不成立——所谓的广泛化繁荣，仍是同一个买家采购决策的多次放大。这一叙事所依赖的2027年单位数交叉里程碑（国信证券58%的估算、摩根大通图表标题）在公开证据下本身就无法定论：经双向修正后，50%分界线落在TPU约800–840万台，六个窗口内的估算跨度为650万到1500万台，外部仲裁者的判断也分裂为2028年（Counterpoint）与2033年（彭博）◆。Google从未披露过TPU出货量——在§10看板中作为叙事持续监测。</p>
+
+  <div class="chart-card">
+    <div class="cc-title">更多客户标识，同一个重心：客户数增加并未稀释集中度</div>
+    <div class="cc-sub">左：博通XPU客户数 · 右：Google占博通营收</div>
+    <div class="conc-flex" id="concentrationPanel"></div>
+    <div class="cc-src">来源：公司披露、券商研究</div>
+  </div>
+
+  <h3>A3 · "需求可见度延伸至2028年"</h3>
+  <p>论断是：命名的吉瓦级承诺让广泛化的爬坡看起来有资金支撑——Anthropic 5GW、OpenAI 10GW、Meta 3GW◆。反驳是一种模式，而非一个数字：必须填补今天已被验证的主线与被宣传的繁荣之间缺口的那部分需求，恰恰是最容易延迟的那种——是时机问题，不是取消问题。世芯电子已记录两次里程碑延迟（2025Q2、2026Q1）；归属于Marvell的Maia产品线在微软主导下曾两度延迟，直到2027年才爬坡——记录留下的是延迟，而非归咎◆。底线是坚实的——博通自己730亿美元的在手订单，以及Anthropic超过100亿/110亿美元的订单是真实的◆——但它们都建立在已经被验证的那条主线之上。可见度的缺口存在于其他一切地方。</p>
+  <p class="footnote">相互作用：这三个判断并非彼此独立：A2的集中度建立在A3判定为"延迟"的同一批承诺之上；A1的利润池嵌套在A3的需求路径之中。当资本开支回落时，三者会被同时检验（将§9d的关键假设加以推广）。</p>
+</div>
+</section>
+
+<!-- §9 -->
+<section id="s9">
+<div class="wrap">
+  <div class="sec-label">§9 · 结论</div>
+  <h2>四十二年一张表；结论落在两种情景之中</h2>
+  <p class="lede">每一次非线性需求都在某个供给约束处终结；1985年以来每一次出清都通过并购完成——变的是约束落在何处，以及用什么工具完成整合。</p>
+
+  <p>把六个窗口并排放在一起，有三列会押韵：需求触发器、供给约束、出清机制。与当前周期最接近的匹配是一种叠加态——需求侧接近1995–2003，供给侧接近2019–2022。曾考察并排除了两个候选窗口——1997–98年因机制不匹配（属于大宗DRAM价格库存周期，内存镜像保留在§9e而非本表）；2008–09年因逻辑设计双寡头证据薄弱（Xilinx大致持平，Altera−12.6%）——理由都保留在图表中。</p>
+
+  <div class="matrix-legend">
+    <span><i class="swatch" style="background:var(--blue-soft);"></i>同一机制</span>
+    <span><i class="swatch cell-partial" style="background:repeating-linear-gradient(45deg, var(--blue-soft), var(--blue-soft) 3px, var(--paper) 3px, var(--paper) 6px);"></i>部分可比</span>
+    <span><i class="swatch" style="background:var(--grey-soft);"></i>无对应项</span>
+    <span><span class="badge-tag">当前窗口（参照）</span></span>
+  </div>
+  <table class="data">
+    <thead><tr><th>窗口</th><th>需求触发器</th><th>供给约束</th><th>峰值→谷底</th><th>出清方式</th><th>匹配度</th></tr></thead>
+    <tbody>
+      <tr><td>1960–1984</td><td class="cell-grey">摩尔定律成本曲线 + PAL胶合逻辑</td><td class="cell-grey">垂直整合IDM产能</td><td class="cell-partial">1984年250亿美元峰值 → 1985年−17%</td><td class="cell-partial">美日贸易协定 + 产品结构升级</td><td>—</td></tr>
+      <tr><td>1985–1995</td><td class="cell-grey">PC浪潮 + 设计周期压缩</td><td class="cell-grey">代工产能（联电/台积电合资）</td><td class="cell-blue">1990–91年增长停滞（未出现负增长年份）</td><td class="cell-blue">六家初创公司被收购或消失；双寡头形成</td><td>—</td></tr>
+      <tr><td><strong>1995–2003 ★</strong></td><td class="cell-blue">光通信资本开支泡沫</td><td class="cell-partial">90nm/300mm尚未到位</td><td class="cell-blue">2001年：双寡头各−39%</td><td class="cell-blue">ASIC阵营被清出；结构化ASIC试验失败</td><td><span class="badge-tag">最接近需求匹配</span></td></tr>
+      <tr><td>2004–2012</td><td class="cell-grey">28nm换代浪潮 + SoC整合</td><td class="cell-grey">台积电28nm良率爬坡</td><td class="cell-partial">2012年小周期−13.6%</td><td class="cell-blue">挑战者坟场（Tabula等）</td><td>—</td></tr>
+      <tr><td>2013–2018</td><td class="cell-partial">深度学习推理需求萌芽</td><td class="cell-partial">GPU/ASIC/FPGA三条供给路线</td><td class="cell-partial">2019年行业−12.1%</td><td class="cell-blue">巨头主导整合（英特尔收购链）</td><td>—</td></tr>
+      <tr><td>2019–2022</td><td class="cell-partial">疫情居家一切 + AI</td><td class="cell-blue">行业性短缺；交期20+周</td><td class="cell-partial">2022年下半年PC−19.5%触发反转</td><td class="cell-blue">并购超级周期 + 监管天花板</td><td><span class="badge-tag">最接近供给匹配</span></td></tr>
+      <tr><td><strong>2023–2026（当前）</strong></td><td>生成式AI推理</td><td>CoWoS/HBM → 电力与数据中心外壳</td><td>尚未见顶（NVIDIA数据中心业务2026Q1同比+92%）</td><td>许可加人才的准并购</td><td><span class="badge-tag">参照</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>情景推算：基准情形三年3.0–4.3倍</h3>
+  <p>取超大规模云厂商资本开支的美元路径，乘以定制硅片捕获的美元份额，下游ASIC需求在基准情形下三年增长3.0–4.3倍（中值约3.6倍），保守情形下为2.0–2.4倍。曾考察2001级别的收缩情景并予以搁置——按当前证据判断，其概率非常低，本版报告不予采纳。触发条件是明确的：如果2027年前四大云厂商资本开支增速跌破+14%，基准情形将让位于保守情形——这是一个刻意提前设置的代理变量：底层等式的解为+13.3%。乘法链条及其来源和日期见本报告各处的详情展开。</p>
+</div>
+</section>
+
+<!-- §10 -->
+<section id="s10">
+<div class="wrap">
+  <div class="sec-label">§10 · 监测</div>
+  <h2>趋势证伪登记册——逐项数字化触发器</h2>
+  <p class="lede">研究的价值在于比别人早一个季度知道该何时改变判断。</p>
+
+  <p>本版将监测看板从27条精简为8个证伪触发器——需求、供给闸门、公司、范式四类——每一条都携带其证伪条件、当前读数与下一次观察窗口。金融约束仪表盘内嵌于融资触发器中（前四大资本开支/经营现金流为0.71，亚马逊为1.02——0.8以上需警惕，1.0以上为强约束）；2027年单位数交叉论断在经过三轮对抗性复核后（A2）仍作为分子收敛触发器保留；逐公司的预警信号收敛为三项交付检查——联发科、世芯电子、博通。任何一项被突破都会退回§9并推进相应情景。见顶的领先指标存在于订单行为中，而非营收中——而订单行为恰恰是本轮周期的长期预付合约所隐藏的东西——这八个触发器就是可观察的代理变量。</p>
+
+  <div class="trigger-grid">
+    <div class="trigger-card">
+      <h4>博通 · FY2026Q3交付</h4>
+      <div class="tsub">需求触发器</div>
+      <p>AI营收必须兑现所指引的跳升</p>
+      <p>利润率下滑必须被证明是一次性结构问题，而非趋势性滑坡</p>
+      <p>军火商的财报定下整条链条的基调</p>
+    </div>
+    <div class="trigger-card">
+      <h4>博通 · 库存与提前备货</h4>
+      <div class="tsub">供给闸门触发器</div>
+      <p>资产负债表会坦白指引不愿说的事</p>
+      <p>龙头企业库存天数已连续三个季度攀升</p>
+      <p>2001年的崩盘首先是一个库存故事</p>
+    </div>
+    <div class="trigger-card">
+      <h4>联发科 · 2026Q4 ASIC爬坡</h4>
+      <div class="tsub">公司触发器</div>
+      <p>指引的下半年跳升是首次硬性验证</p>
+      <p>台湾设计链条的整个叙事都押注在这份财报上</p>
+      <p>市场的高线预期比公司自身指引高约70%</p>
+    </div>
+    <div class="trigger-card">
+      <h4>世芯电子 · 3nm爬坡与NRE里程碑</h4>
+      <div class="tsub">公司触发器</div>
+      <p>已有两次里程碑延迟在案——第三次将自动触发红灯</p>
+      <p>NRE领先量产营收三到四个季度</p>
+      <p>锯齿状曲线的下一颗牙齿正在这里形成</p>
+    </div>
+    <div class="trigger-card">
+      <h4>台积电 · 2027年CoWoS产能与需求</h4>
+      <div class="tsub">供给闸门触发器</div>
+      <p>2026-07-16的电话会将框定明年的产能与AI需求</p>
+      <p>任何"非常紧张"措辞的软化都是供给侧的第一个信号</p>
+      <p>供给刚性是本轮周期对抗2001年的锚点</p>
+    </div>
+    <div class="trigger-card">
+      <h4>行业 · 融资循环性</h4>
+      <div class="tsub">范式触发器</div>
+      <p>供应商融资的需求正被当作采购订单来定价</p>
+      <p>循环在为其融资的需求本身崩塌之前就会解体</p>
+      <p>要盯着融资，而不是新闻稿</p>
+    </div>
+    <div class="trigger-card">
+      <h4>行业 · 取消与减单的扩散</h4>
+      <div class="tsub">范式触发器</div>
+      <p>目前只是孤立的减单——尚未扩散</p>
+      <p>同一季度内两家旗舰级减单，即推进"同一剧本"情景</p>
+      <p>或两家超大规模云厂商同时"消化/暂停"</p>
+    </div>
+    <div class="trigger-card">
+      <h4>行业 · TPU 2027单位数收敛</h4>
+      <div class="tsub">范式触发器</div>
+      <p>各方估算正好跨在交叉线两侧</p>
+      <p>公司层面的出货量披露：零</p>
+      <p>作为叙事持续监测</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- §11 -->
+<section id="s11">
+<div class="wrap">
+  <div class="sec-label">§11 · 公司深度剖析</div>
+  <h2>供应链收费站上的六家公司</h2>
+  <p class="lede">客户结构、项目阶段、营收确认、护城河、关键风险与成长空间——描述性分析；刻意不给出目标价。</p>
+
+  <p>博通锚定了定制ASIC特许经营权；Marvell、联发科、GUC、世芯电子和芯原股份在设计服务价值链中各占不同位置。COT（客户自带工具）模式——客户拥有架构与知识产权，设计公司负责实现——出现在联发科与GUC的案例中。两家台湾设计公司指向不同的工作负载：世芯电子偏向GPU式并行计算，GUC偏向CPU侧。数据来自公司披露和有日期标注的券商研究。市场数据截至2026年7月10日。</p>
+
+  <p><strong>与NVIDIA的纠缠。</strong>六家中的三家——联发科、Marvell和世芯电子——是NVLink Fusion的官方合作伙伴（GUC出现在生态系统页面上）：NVIDIA已向第三方XPU开放其扩展互连、交换机、MGX机架与集群软件（官方，2025-05-18），而AWS的公开路线图显示Trainium4将采用NVLink 6和MGX（2025-12-02）——第三方ASIC正在进入NVIDIA的平台，同时又在计算芯片上与其竞争。本报告坚持的边界是：截至2026-07-13，没有第一手证据显示NVIDIA为任何云客户设计定制AI计算芯片——团队与洽谈存在，但设计中标不存在；而对合作伙伴而言，一个标识不等于一次设计中标——生态系统认证不产生营收。NVLink Fusion的定价与接入率均未披露；在披露之前，它们是情景变量，而非营收线。</p>
+
+  <table class="data">
+    <thead><tr><th>公司</th><th>在此链条中的角色</th><th>客户</th><th>关键风险</th></tr></thead>
+    <tbody>
+      <tr><td>博通 AVGO</td><td>定制ASIC的定义者：高端定制硅片份额80–85%，加上AI网络特许经营权（AI营收约33–40%）</td><td>XPU量产客户在12个季度内从1家增至6家</td><td>上行与下行共享同一来源——Google集中度（占营收24%，正朝FY2026E约40%迈进）</td></tr>
+      <tr><td>Marvell MRVL</td><td>行业第二（份额10–12%），沿AI服务器互连路径运营三大引擎：定制XPU硅片、XPU附加、以及互连业务</td><td>三家美国超大规模云厂商，仅部分具名</td><td>毛利率从65.5%稀释至58.9%（花旗预测FY2029E为55.7%）</td></tr>
+      <tr><td>联发科 2454.TW</td><td>预期差最大的转型案例：一台手机SoC现金牛正重新定义自己为AI硅片供应商</td><td>Google是唯一确认的客户，已两年</td><td>实际上是单一客户的AI敞口</td></tr>
+      <tr><td>GUC（Global Unichip）3443.TW</td><td>在台积电产线上成长起来的设计服务商（台积电持股34.8%）：厚利润的NRE加薄利润的量产代工，3nm晶圆</td><td>AI故事是CPU而非XPU：Google Axion后端服务，加上第二家大型美国CSP</td><td>结构性毛利率下滑，处于转嫁模式之下</td></tr>
+      <tr><td>世芯电子（Alchip）3661.TW</td><td>最集中的单一客户押注：NRE是利润引擎，量产是营收引擎，毛利率取决于产品结构</td><td>广泛被认定与AWS Trainium相关（卖方推测加媒体指认）</td><td>身位确定不等于盈利确定：NRE里程碑时机是唯一的摆动因素，已有两次流片延迟</td></tr>
+      <tr><td>芯原股份 688521.SH</td><td>稀缺的A股设计服务资产，运营SiPaaS双引擎：知识产权授权（2025年上半年毛利率92.7%）作为利润基础</td><td>较为分散而非集中（前五大客户44.5%，最大单一客户FY2024占20.2%），偏向消费类</td><td>已连续三年亏损，成本刚性</td></tr>
+    </tbody>
+  </table>
+  <p class="footnote">仅为描述性分析。数据来自公司披露和有日期标注的券商研究；不表达或暗示任何估值目标。</p>
+</div>
+</section>
+
+<!-- Appendix -->
+<section id="app">
+<div class="wrap">
+  <div class="sec-label">附录 · 来源与方法</div>
+  <h2>方法、缺口与来源</h2>
+  <p><strong>方法。</strong>本站是一份四十二年周期重建报告（六个窗口，每个窗口都基于当时可知的信息重建）与ASIC行业深度剖析相结合的交互版本。事后之明的陈述均已标注。2027年单位数交叉论断额外经过三轮对抗性复核，总结见S10（A2）。本报告不表达也不暗示任何买入、卖出或持有建议。</p>
+  <p><strong>信源纪律。</strong>每个数字都归入以下四类信源之一：公司披露（申报文件、财报电话会、投资者关系材料）；券商研究（仅按类别注明）；行业与官方数据（SEMI、WSTS、IEA、SemiAnalysis、TrendForce、DigiTimes及政府出版物）；Kimi Research（不属于以上任何一类的综合分析）。超出这些类别的内容均已明确列出。</p>
+  <p><strong>计量纪律。</strong>渗透率乘法计算仅使用美元口径。TPU出货量估算（600万/800万/1200万台）并列呈现，不作调和。CoWoS与HBM的机构估算相差±10–20%，两者均予以展示。情景锚定：基准情形三年3.0–4.3倍（中值约3.6倍），保守情形2.0–2.4倍；2001级别的收缩情景经审视后被搁置为低概率尾部情形。触发开关：前四大厂商2027年预期资本开支增速跌破+14%（等式解为+13.3%，向上取整）将撤回基准情形。</p>
+  <p class="footnote">交互研究版 · 数据截至2026-07-12，更新于2026-07-14 · 不含任何投资建议</p>
+</div>
+</section>
+
+<footer>INFERENCE SILICON · 1985–2026 · 仅供参考，非投资建议</footer>
+
+<script>
+/* ============ Palette ============ */
+const INK='#2B2823', INKDIM='#5C574C', INKFAINT='#8C8577';
+const ACCENT='#C1603C', ACCENTSOFT='#F0DCCC';
+const BLUE='#3E6E8E', BLUESOFT='#D9E5EA', BLUELIGHT='#7FA6BE';
+const RED='#B14A3D', REDSOFT='#F3DEDA';
+const GOLD='#B08A3E', GOLDSOFT='#F0E6C8';
+const GREEN='#5F8C63', GREENSOFT='#DEE9DD';
+const GREY='#9A9484', GREYSOFT='#EAE6DA';
+const PAPER='#FBF9F4', LINE='#E2DBC5';
+
+/* generic tiny SVG chart helpers (no external deps) */
+function svgBarChart(elId, labels, series, opts){
+  opts = opts||{};
+  const el = document.getElementById(elId);
+  const W = opts.width||880, H = opts.height||260;
+  const padL=40, padR=10, padT=16, padB=28;
+  const plotW = W-padL-padR, plotH = H-padT-padB;
+  const stacked = !!opts.stacked;
+  let maxV;
+  if(stacked){
+    maxV = Math.max(...labels.map((_,i)=> series.reduce((s,se)=>s+se.data[i],0)));
+  } else {
+    maxV = Math.max(...series.flatMap(se=>se.data));
+  }
+  maxV = maxV*1.12;
+  const groupW = plotW/labels.length;
+  const barW = stacked ? groupW*0.55 : (groupW*0.72)/series.length;
+  let bars='', axis='';
+  axis += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="${LINE}"/>`;
+  axis += `<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="${LINE}"/>`;
+  [0,0.5,1].forEach(f=>{
+    const yy = H-padB-f*plotH;
+    axis += `<line x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}" stroke="#EDE6D4"/>`;
+    axis += `<text x="${padL-6}" y="${yy+3}" text-anchor="end" font-size="10" fill="${INKFAINT}" font-family="SFMono-Regular,monospace">${(maxV*f).toFixed(opts.decimals||0)}</text>`;
+  });
+  labels.forEach((lab,i)=>{
+    const gx = padL + i*groupW;
+    axis += `<text x="${gx+groupW/2}" y="${H-padB+16}" text-anchor="middle" font-size="10" fill="${INKFAINT}" font-family="SFMono-Regular,monospace">${lab}</text>`;
+    if(stacked){
+      let acc=0;
+      series.forEach(se=>{
+        const v=se.data[i];
+        const y0 = H-padB-(acc/maxV)*plotH;
+        const y1 = H-padB-((acc+v)/maxV)*plotH;
+        bars += `<rect x="${(gx+groupW/2-barW/2).toFixed(1)}" y="${y1.toFixed(1)}" width="${barW.toFixed(1)}" height="${(y0-y1).toFixed(1)}" fill="${se.color}"/>`;
+        acc+=v;
+      });
+    } else {
+      series.forEach((se,si)=>{
+        const v=se.data[i];
+        const bx = gx + groupW*0.14 + si*barW;
+        const yv = H-padB-(v/maxV)*plotH;
+        bars += `<rect x="${bx.toFixed(1)}" y="${yv.toFixed(1)}" width="${(barW*0.85).toFixed(1)}" height="${(H-padB-yv).toFixed(1)}" fill="${se.color}" rx="2"/>`;
+        if(opts.showValues) bars += `<text x="${(bx+barW*0.4).toFixed(1)}" y="${(yv-5).toFixed(1)}" text-anchor="middle" font-size="10.5" fill="${INK}" font-weight="700">${v}</text>`;
+      });
+    }
+  });
+  let shade='';
+  if(opts.shadeIndex!=null){
+    const gx = padL + opts.shadeIndex*groupW;
+    shade = `<rect x="${gx}" y="${padT}" width="${groupW}" height="${plotH}" fill="${opts.shadeColor||'rgba(177,74,61,0.10)'}"/>
+    <text x="${gx+groupW/2}" y="${padT+12}" text-anchor="middle" font-size="10.5" fill="${opts.shadeLabelColor||RED}" font-family="SFMono-Regular,monospace">${opts.shadeLabel||''}</text>`;
+  }
+  let legend='';
+  if(opts.legend!==false && series.length>1){
+    legend = `<div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:8px; font-size:11.5px; color:${INKDIM};">` +
+      series.map(se=>`<span style="display:inline-flex; align-items:center; gap:5px;"><i style="width:10px;height:10px;border-radius:2px;background:${se.color};display:inline-block;"></i>${se.label}</span>`).join('') + `</div>`;
+  }
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}">${shade}${axis}${bars}</svg>${legend}`;
+}
+
+function svgLineChart(elId, labels, series, opts){
+  opts = opts||{};
+  const el = document.getElementById(elId);
+  const W = opts.width||880, H = opts.height||220;
+  const padL=44, padR=14, padT=16, padB=28;
+  const plotW = W-padL-padR, plotH = H-padT-padB;
+  const log = !!opts.log;
+  let allVals = series.flatMap(se=>se.data);
+  let minV = opts.min!=null?opts.min:(log?Math.min(...allVals)*0.6:0);
+  let maxV = opts.max!=null?opts.max:Math.max(...allVals)*1.15;
+  function yFor(v){
+    if(log){
+      const lv=Math.log10(v), lmin=Math.log10(minV), lmax=Math.log10(maxV);
+      return H-padB-((lv-lmin)/(lmax-lmin))*plotH;
+    }
+    return H-padB-((v-minV)/(maxV-minV))*plotH;
+  }
+  function xFor(i){ return padL + (labels.length>1? i/(labels.length-1)*plotW : plotW/2); }
+  let axis = `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="${LINE}"/>`;
+  axis += `<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="${LINE}"/>`;
+  labels.forEach((lab,i)=>{
+    axis += `<text x="${xFor(i)}" y="${H-padB+16}" text-anchor="middle" font-size="10.5" fill="${INKFAINT}" font-family="SFMono-Regular,monospace">${lab}</text>`;
+  });
+  if(opts.bands){
+    opts.bands.forEach(b=>{
+      const i0=labels.indexOf(b.from), i1=labels.indexOf(b.to);
+      if(i0<0||i1<0) return;
+      const x0=xFor(i0)-(plotW/(labels.length-1))/2, x1=xFor(i1)+(plotW/(labels.length-1))/2;
+      axis = `<rect x="${x0}" y="${padT}" width="${x1-x0}" height="${plotH}" fill="${b.color}"/><text x="${(x0+x1)/2}" y="${padT+13}" text-anchor="middle" font-size="10" fill="${INKFAINT}" font-family="SFMono-Regular,monospace">${b.label}</text>` + axis;
+    });
+  }
+  let lines='';
+  series.forEach(se=>{
+    let d='';
+    se.data.forEach((v,i)=>{ d+= (i===0?'M ':'L ') + xFor(i).toFixed(1)+' '+yFor(v).toFixed(1)+' '; });
+    lines += `<path d="${d}" fill="none" stroke="${se.color}" stroke-width="2.2" ${se.dash?`stroke-dasharray="${se.dash}"`:''}/>`;
+    if(se.points!==false){
+      se.data.forEach((v,i)=>{
+        lines += `<circle cx="${xFor(i).toFixed(1)}" cy="${yFor(v).toFixed(1)}" r="4.5" fill="${se.color}"/>`;
+        if(opts.showValues) lines += `<text x="${xFor(i).toFixed(1)}" y="${(yFor(v)-10).toFixed(1)}" text-anchor="middle" font-size="10.5" fill="${INK}" font-weight="700">${se.fmt?se.fmt(v):v}</text>`;
+      });
+    }
+  });
+  let legend='';
+  if(opts.legend!==false){
+    legend = `<div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:8px; font-size:11.5px; color:${INKDIM};">` +
+      series.map(se=>`<span style="display:inline-flex; align-items:center; gap:5px;"><i style="width:14px;height:2px;background:${se.color};display:inline-block;"></i>${se.label}</span>`).join('') + `</div>`;
+  }
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}">${axis}${lines}</svg>${legend}`;
+}
+
+/* ============ Hero timeline ============ */
+(function(){
+  const el = document.getElementById('heroTimeline');
+  const detailEl = document.getElementById('heroDetail');
+  const yStart=1980, yEnd=2027;
+  const w=1500;
+  const x = y => ((y-yStart)/(yEnd-yStart))*w;
+
+  const bands = [
+    {label:'W1 · 1985–95<br>FPGA founding', from:1985, to:1995},
+    {label:'W2 · 1995–03<br>telecom bubble', from:1995, to:2003},
+    {label:'W3 · 2004–12<br>the quiet decade', from:2004, to:2012},
+    {label:'W4 · 2013–18<br>ignition', from:2013, to:2018},
+    {label:'W5 · 2019–22<br>first in-house wave', from:2019, to:2022},
+    {label:'W6 · 2023–26<br>inference boom', from:2023, to:2026, current:true}
+  ];
+  let html='';
+  bands.forEach(b=>{
+    const left=x(b.from), width=x(b.to)-x(b.from);
+    html += `<div class="htl-band ${b.current?'current':''}" style="left:${left}px; width:${width}px;"></div>`;
+    html += `<div class="htl-band-label" style="left:${left+width/2}px;"><b>${b.label.split('<br>')[0]}</b>${b.label.split('<br>')[1]}</div>`;
+  });
+  [1980,1990,2000,2010,2020].forEach(yr=>{
+    html += `<div class="htl-tick" style="left:${x(yr)}px;"></div>`;
+    html += `<div class="htl-tick-label" style="left:${x(yr)}px;">${yr}</div>`;
+  });
+  html += `<div class="htl-axis"></div>`;
+
+  const events = [
+    {y:1984, n:'01', t:'Xilinx and Altera founded', yr:'1983–84',
+      title:'Xilinx与Altera成立',
+      desc:'两家公司几乎同时起步，开启了可编程逻辑器件（PLD）与后来FPGA长达四十年的竞争。次年Xilinx推出XC2064，把自己定位为"更好的ASIC"，而非"更好的PLD"——这句定位语在四十年后仍在被云厂商自研AI芯片的宣传语中复用。'},
+    {y:1994, n:'02', t:'Xilinx takes the PLD crown', yr:'1994',
+      title:'Xilinx夺得PLD王冠',
+      desc:'经历1990–91年的增长停滞完成第一轮出清，四家龙头企业已占据可编程逻辑市场64%的份额（高密度部分80%）。Xilinx确立对Altera的领先地位，双寡头格局定型。'},
+    {y:2000, n:'03', t:'Telecom bubble peaks', yr:'2000',
+      title:'电信泡沫见顶',
+      desc:'互联网容量焦虑将可编程逻辑推向行业中心：Altera当年67%的营收来自通信行业。纳斯达克于2000年3月见顶，但双寡头的订单冻结要到2001年第一季度才出现——滞后九到十二个月，股价从来不是领先指标。'},
+    {y:2001, n:'04', t:'Industry −32% · duopoly −39%', yr:'2001', crisis:true,
+      title:'行业−32%，双寡头各−39%',
+      desc:'Xilinx与Altera同步下跌39%，Lattice下跌48%，LSI下跌35%并计提9.6亿美元亏损——当时历史最差的一年。同一次冲击，留下四道不同的伤疤：出清完成后，成本领先（而非耐心）成为新的生存策略。'},
+    {y:2003, n:'05', t:'The $12 million-gate FPGA', yr:'2003',
+      title:'1200万门的FPGA',
+      desc:'Spartan-3：百万门FPGA，售价低于12美元。在从−32%谷底反弹两个季度后，Xilinx CEO宣布向230亿美元的ASIC/ASSP市场发起进攻——把成本曲线武器化，把一场危机转化为一张制程节点的门票。'},
+    {y:2012, n:'06', t:'Microsoft wires 1,632 FPGA servers', yr:'2012',
+      title:'微软接入1,632台FPGA服务器',
+      desc:'Project Catapult悄悄将FPGA服务器接入必应生产网络，在固定延迟下把排序吞吐量提升了95%——但这一部署两年后才被披露。"先部署，后披露"的剧本第一次登场。'},
+    {y:2015, n:'07', t:'Google deploys TPU v1', yr:'2015',
+      title:'Google部署TPU v1',
+      desc:'TPU早在2015年就已在数据中心投入生产，专为加速神经网络推理而设计——但行业直到2016年5月的Google I/O大会才知晓它的存在。真实部署再次比行业共识早了一年多。'},
+    {y:2016, n:'08', t:'Intel buys into AI', yr:'2016',
+      title:'英特尔押注AI',
+      desc:'英特尔以167亿美元收购Altera，随后又收购Nervana、Movidius、Mobileye，四年内押注超320亿美元。十年后，Altera被以87.5亿美元卖给银湖资本，仅为收购价的一半略多；Nervana被计提为零。'},
+    {y:2020, n:'09', t:'AMD bids $35B for Xilinx', yr:'2020',
+      title:'AMD以350亿美元竞购Xilinx',
+      desc:'交易最终以约490亿美元完成（2020年宣布，2022年完成交割），是本轮并购超级周期五笔十位数交易之一——108天内五笔合计1150亿美元的交易被相继宣布。'},
+    {y:2022, n:'10', t:'Oct 7: peak meets controls', yr:'2022', crisis:true,
+      title:'10月7日：峰值遭遇管制',
+      desc:'同一天，Graphcore披露全年营收270万美元、对应估值27.7亿美元——资本泡沫在被测量的当天就宣告破裂。出口管制同时收紧，供给与需求两端同时收缩，纯粹的收购开始让位于许可加人才的结构。'},
+    {y:2023, n:'11', t:'Generative AI ignites', yr:'2023', now:true,
+      title:'生成式AI点火',
+      desc:'ChatGPT发布两个季度后，NVIDIA数据中心业务环比增长141%——13个季度内累计增长17.6倍，本轮推理算力繁荣正式开始点火。'},
+    {y:2025, n:'12', t:'NVLink Fusion opens the platform', yr:'2025', now:true,
+      title:'NVLink Fusion开放平台',
+      desc:'NVIDIA向第三方XPU开放其扩展互连、交换机、MGX机架与集群软件——第三方ASIC得以进入NVIDIA的平台，同时又在计算芯片上与其竞争，边界变得模糊。'},
+    {y:2026, n:'13', t:'Expansion confirmed · no peak yet', yr:'2026', now:true, future:true,
+      title:'扩张得到确认，尚未见顶',
+      desc:'台积电称供给到2027年前仍将"非常紧张"；前四大云厂商2026年资本开支指引已从+34%上修至约+70%。军备竞赛阶段仍在延续，2000年式的同步下行尚未出现。'}
+  ];
+
+  // pixel positions
+  events.forEach(e=>{ e.px = x(e.y); });
+
+  // greedy lane assignment to avoid horizontal overlap
+  const laneH=[110,190,270,350];
+  const cardHalf=95, gapPad=14;
+  const laneSegs=[[],[],[],[]];
+  events.forEach(e=>{
+    const x0=e.px-cardHalf-gapPad, x1=e.px+cardHalf+gapPad;
+    let placed=false;
+    for(let li=0; li<laneH.length; li++){
+      const conflict = laneSegs[li].some(seg=> !(x1<seg.x0 || x0>seg.x1));
+      if(!conflict){ laneSegs[li].push({x0,x1}); e.h=laneH[li]; placed=true; break; }
+    }
+    if(!placed){ e.h=laneH[laneH.length-1]+70; laneSegs[laneH.length-1].push({x0,x1}); }
+  });
+
+  events.forEach((e,idx)=>{
+    html += `<div class="htl-dot ${e.now?'now':''}" style="left:${e.px}px;"></div>`;
+    html += `<div class="htl-line" style="left:${e.px}px; bottom:70px; height:${e.h-70}px;"></div>`;
+    html += `<div class="htl-card ${e.crisis?'crisis':''} ${e.now?'now':''} ${e.future?'future':''}" data-idx="${idx}" style="left:${e.px}px; bottom:${e.h}px;">
+      <div class="yr"><span>${e.yr}</span><span>${e.n}</span></div>
+      <div class="ev">${e.t}</div>
+    </div>`;
+  });
+  el.innerHTML = html;
+
+  function showDetail(idx){
+    const e = events[idx];
+    document.querySelectorAll('#heroTimeline .htl-card').forEach(c=>c.classList.remove('selected'));
+    const card = document.querySelector(`#heroTimeline .htl-card[data-idx="${idx}"]`);
+    if(card) card.classList.add('selected');
+    detailEl.innerHTML = `<h4><span class="yrtag">${e.yr} · ${e.n}</span>${e.title}</h4><p style="margin:0;">${e.desc}</p>`;
+    detailEl.classList.add('show');
+  }
+  el.querySelectorAll('.htl-card').forEach(card=>{
+    card.addEventListener('click', ()=> showDetail(+card.dataset.idx));
+  });
+  showDetail(4); // default: the $12 million-gate FPGA example
+})();
+
+/* ============ Decade accordion ============ */
+(function(){
+  const decades = [
+    {y:'1980S', t:'Glue logic to the first FPGA', products:[
+      ['Xilinx XC2064 (1985)','历史上第一款商用FPGA，1000–1500可用门，定位为"更好的ASIC"。'],
+      ['MMI / Signetics PLA','早期PAL/PLA可编程逻辑器件，胶合逻辑时代的主力。']
+    ]},
+    {y:'1990S', t:'The FPGA duopoly forms', products:[
+      ['Xilinx XC4000系列','夺得PLD王冠，四家龙头合计占据可编程逻辑64%份额。'],
+      ['Altera FLEX/APEX','双寡头格局确立，通信基础设施成为最大终端市场。']
+    ]},
+    {y:'2000S', t:'The cost-curve assault on ASIC', products:[
+      ['Xilinx Spartan-3 · 2003','百万门、12美元的90nm/300mm FPGA，目标清单像一份客厅清单。'],
+      ['Structured ASIC · eASIC / Tabula','介于FPGA灵活性与门阵列成本之间的中间路线：eASIC持续到2004–2012年被英特尔收购；Tabula烧掉2.14亿美元后关闭。']
+    ]},
+    {y:'2010S', t:'The cloud builds its own', products:[
+      ['Microsoft Catapult (2012)','1,632台FPGA服务器接入必应生产网络，两年后才披露。'],
+      ['Google TPU v1 (2015)','自2015年起部署，2016年才公开——专为推理而生的第一代自研加速器。']
+    ]},
+    {y:'2020S', t:'Inference ASICs at fleet scale', products:[
+      ['TPU v4–v8 / Trainium / Inferentia','云厂商自研加速器进入舰队级规模量产，与NVIDIA同代制程竞速。'],
+      ['CoWoS / HBM 供给闸门','封装与内存取代晶圆代工成为新的硬约束，利润池转移至供应链上游。']
+    ]}
+  ];
+  const row = document.getElementById('decadeRow');
+  const panel = document.getElementById('decadePanel');
+  decades.forEach((d,i)=>{
+    const col = document.createElement('div');
+    col.className='decade-col'+(i===4?' active':'');
+    col.innerHTML = `<div class="dy">${d.y}</div><div class="dt">${d.t}</div><div class="dexp">${i===4?'− COLLAPSE':'+ EXPAND'}</div>`;
+    col.onclick=()=>{
+      document.querySelectorAll('.decade-col').forEach(c=>{c.classList.remove('active'); c.querySelector('.dexp').textContent='+ EXPAND';});
+      col.classList.add('active');
+      col.querySelector('.dexp').textContent='− COLLAPSE';
+      panel.innerHTML = `<div class="dp-grid">${d.products.map(p=>`<div class="dp-item"><h5><span class="arrow">→</span> ${p[0]}</h5><p>${p[1]}</p></div>`).join('')}</div>`;
+      panel.classList.add('show');
+    };
+    row.appendChild(col);
+  });
+  panel.innerHTML = `<div class="dp-grid">${decades[4].products.map(p=>`<div class="dp-item"><h5><span class="arrow">→</span> ${p[0]}</h5><p>${p[1]}</p></div>`).join('')}</div>`;
+  panel.classList.add('show');
+})();
+
+/* ============ Transmission chain (SVG sine) ============ */
+(function(){
+  const el = document.getElementById('transChain');
+  const w=900,h=220;
+  let path='M 10 130 ';
+  const pts=[];
+  const n=180;
+  for(let i=0;i<=n;i++){
+    const t=i/n;
+    const amp = 8 + t*45;
+    const yv = 130 - Math.sin(t*Math.PI*5)*amp*(t<0.85?1:(1-((t-0.85)/0.15))*1.2 - (t>0.85? (t-0.85)*3:0));
+    const xx = 10 + t*860;
+    pts.push([xx,yv]);
+  }
+  let bluePath='M '+pts.slice(0,Math.floor(n*0.78)).map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' L ');
+  let redPath='M '+pts.slice(Math.floor(n*0.78)).map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' L ');
+
+  const markers=[
+    {x:60,label:'01',t:'Demand ignition',s:'new device class'},
+    {x:260,label:'02',t:'Capacity assumptions fail',s:'anchors slip'},
+    {x:460,label:'03',t:'Panic double-ordering',s:'lead times spike'},
+    {x:640,label:'04',t:'Block arrivals',s:'capacity in blocks'},
+    {x:800,label:'05',t:'Clearing',s:'sales, not bankruptcies',red:true}
+  ];
+  let mhtml='';
+  markers.forEach(m=>{
+    mhtml += `<text x="${m.x}" y="60" text-anchor="middle" font-family="SFMono-Regular,monospace" font-size="11" fill="${m.red?RED:BLUE}" font-weight="700">${m.label}</text>`;
+    mhtml += `<text x="${m.x}" y="78" text-anchor="middle" font-size="12.5" fill="${m.red?RED:INK}" font-weight="600">${m.t}</text>`;
+    mhtml += `<text x="${m.x}" y="200" text-anchor="middle" font-size="11" fill="${INKFAINT}">${m.s}</text>`;
+    mhtml += `<rect x="${m.x-5}" y="127" width="10" height="10" fill="${PAPER}" stroke="${m.red?RED:BLUE}" stroke-width="1.5" transform="rotate(45 ${m.x} 132)"/>`;
+  });
+
+  el.innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="220">
+    <line x1="10" y1="132" x2="890" y2="132" stroke="${LINE}" stroke-width="1"/>
+    <path d="${bluePath}" fill="none" stroke="${BLUE}" stroke-width="2.2"/>
+    <path d="${redPath}" fill="none" stroke="${RED}" stroke-width="2.2"/>
+    ${mhtml}
+    <text x="450" y="20" text-anchor="middle" font-family="SFMono-Regular,monospace" font-size="11" fill="${INKFAINT}">amplification ×1 → ×4</text>
+  </svg>
+  <div class="trans-labels"><span>R&amp;D持续穿越谷底 → 下一代技术基础（300mm → EUV → HBM/CoWoS）→ 再次点火</span></div>`;
+})();
+
+/* ============ Lifelines gantt ============ */
+(function(){
+  const el = document.getElementById('lifelines');
+  const yStart=1975, yEnd=2026, span=yEnd-yStart;
+  const pct = y => ((y-yStart)/span*100).toFixed(2);
+
+  function row(name,start,end,color,marker,note){
+    const left=pct(start), width=pct(end)-pct(start);
+    return `<div class="gantt-row">
+      <div class="gantt-name">${name}</div>
+      <div class="gantt-track">
+        <div class="gantt-bar" style="left:${left}%; width:${width}%; background:${color};"></div>
+        <div class="gantt-marker" style="left:calc(${left}% + ${width}% - 7px); color:#fff; background:${color};">${marker}</div>
+        <div class="gantt-end" style="left:calc(${left}% + ${width}% + 10px);">${note}</div>
+      </div>
+    </div>`;
+  }
+  let html='';
+  const axisYears=[1975,1985,1995,2005,2015,2026];
+  html += `<div class="gantt-axis-row"><div></div><div class="gantt-axis-track">${axisYears.map(yr=>`<div class="gantt-axis-tick" style="left:${pct(yr)}%;"><i></i>${yr}</div>`).join('')}</div></div>`;
+  html += `<div class="gantt-section">PAL / PLD ERA</div>`;
+  html += row('Signetics (PLA)',1975,1985,GREY,'✕','PLA线淡出 (~1985)');
+  html += row('MMI',1978,1987,GREY,'→','并入AMD (1987)');
+  html += row('AMD PLD division',1987,1999,GREY,'→','经Vantis转入Lattice (1999)');
+  html += `<div class="gantt-section">THE FPGA WARS · 1983–95 COHORT</div>`;
+  html += row('Altera',1983,2015,BLUE,'→','$16.7B · Intel 2015');
+  html += row('Lattice',1983,2026,GREEN,'●','独立至今');
+  html += row('Xilinx',1984,2022,BLUE,'→','$49B · AMD 2020–22');
+  html += row('Actel',1985,2010,BLUE,'→','经Microsemi (2010)');
+  html += row('Plus Logic',1988,1994,GREY,'✕','消失 (~1994)');
+  html += row('Crosspoint Solutions',1990,1994,GREY,'✕','消失 (~1994)');
+  html += row('QuickLogic',1991,2026,GREEN,'●','独立小盘股');
+  html += row('Atmel (FPGA)',1993,2016,BLUE,'→','并入Microchip (2016)');
+  html += `<div class="gantt-section">DUOPOLY CHALLENGERS · 2004–12 COHORT</div>`;
+  html += row('Tabula',2003,2015,RED,'✕','烧掉$214M后关闭');
+  html += row('Achronix',2004,2026,GREEN,'●','独立');
+  html += row('eASIC',2004,2018,BLUE,'→','并入英特尔 (2018)');
+  html += row('SiliconBlue',2006,2011,BLUE,'→','$62M · Lattice 2011');
+  html += `<div class="gantt-section">AI ACCELERATORS · 2016 COHORT</div>`;
+  html += row('Habana',2016,2019,BLUE,'→','$2B · 英特尔 2019');
+  html += row('Graphcore',2016,2024,BLUE,'→','~$0.55B · 软银 2024');
+  html += row('Groq',2016,2025,BLUE,'→','~$20B 许可+人才 · NVIDIA 2025');
+  html += row('Cerebras',2016,2026,GOLD,'◆','IPO · ~$67B市值');
+  html += row('Tenstorrent',2016,2026,GREY,'?','据报道洽谈中 (2026-06)');
+  html += row('SambaNova',2017,2026,GREY,'●','转型推理服务');
+  el.innerHTML = html;
+})();
+
+/* ============ Consolidation flow (rich timeline sankey via SVG) ============ */
+(function(){
+  const el = document.getElementById('flowChart');
+  const yStart=1975, yEnd=2026;
+  const xTrackStart=250, xTrackEnd=1040;
+  const yx = yr => xTrackStart + (yr-yStart)/(yEnd-yStart)*(xTrackEnd-xTrackStart);
+
+  // category boxes on the right
+  const categories = {
+    AMD:        {label:'AMD',                    count:2, color:BLUE,  y:0},
+    DISSOLVED:  {label:'DISSOLVED',               count:4, color:GREY,  y:0, dashedBox:true},
+    MICROCHIP:  {label:'MICROCHIP',               count:2, color:RED,   y:0},
+    LATTICE:    {label:'LATTICE',                 count:2, color:BLUE,  y:0},
+    INTEL:      {label:'INTEL',                   count:3, color:BLUE,  y:0},
+    INDEP:      {label:'STILL INDEPENDENT',       count:4, color:BLUE,  y:0},
+    SOFTBANK:   {label:'SOFTBANK',                count:1, color:GREY,  y:0},
+    NVIDIA:     {label:'NVIDIA',                  count:1, color:GREEN, y:0},
+    IPO:        {label:'PUBLIC MARKETS · IPO',    count:1, color:GOLD,  y:0},
+    QUALCOMM:   {label:'QUALCOMM',                count:1, color:BLUE,  y:0, dashedBox:true, sub:'reported talks'}
+  };
+  const catOrder=['AMD','DISSOLVED','MICROCHIP','LATTICE','INTEL','INDEP','SOFTBANK','NVIDIA','IPO','QUALCOMM'];
+
+  // rows: {name, start, end(deal/dissolve year or null), type, note, cat, dashed}
+  const sections = [
+    {label:'PAL / PLD ERA', rows:[
+      {name:'Signetics (PLA)', start:1975, end:1985, type:'dissolved', note:'PLA线淡出 (~1985)', cat:'DISSOLVED'},
+      {name:'MMI', start:1978, end:1987, type:'plain', note:'并入AMD (1987)'},
+      {name:'AMD PLD division', start:1987, end:1999, type:'acquired', note:'经Vantis转入Lattice (1999)', cat:'LATTICE'}
+    ]},
+    {label:'THE FPGA WARS · 1983–95 COHORT', rows:[
+      {name:'Altera', start:1983, end:2015, type:'acquired', note:'$16.7B · Intel 2015', cat:'INTEL'},
+      {name:'Lattice', start:1983, end:2026, type:'independent', note:'独立至今', cat:'INDEP'},
+      {name:'Xilinx', start:1984, end:2021, type:'acquired', note:'$49B · AMD 2020–22', cat:'AMD'},
+      {name:'Actel', start:1985, end:2018, type:'acquired', note:'Microsemi 2010 → Microchip 2018', cat:'MICROCHIP'},
+      {name:'Plus Logic', start:1988, end:1994, type:'dissolved', note:'消失 (~1994)', cat:'DISSOLVED'},
+      {name:'Crosspoint Solutions', start:1990, end:1994, type:'dissolved', note:'消失 (~1994)', cat:'DISSOLVED'},
+      {name:'QuickLogic', start:1991, end:2026, type:'independent', note:'独立小盘股', cat:'INDEP'},
+      {name:'Atmel (FPGA)', start:1993, end:2016, type:'acquired', note:'并入Microchip (2016)', cat:'MICROCHIP'}
+    ]},
+    {label:'DUOPOLY CHALLENGERS · 2004–12 COHORT', rows:[
+      {name:'Tabula', start:2003, end:2015, type:'dissolved', note:'烧掉$214M后关闭', cat:'DISSOLVED'},
+      {name:'Achronix', start:2004, end:2026, type:'independent', note:'独立', cat:'INDEP'},
+      {name:'eASIC', start:2004, end:2018, type:'acquired', note:'并入英特尔 (2018)', cat:'INTEL'},
+      {name:'SiliconBlue', start:2006, end:2011, type:'acquired', note:'$62M · Lattice 2011', cat:'LATTICE'}
+    ]},
+    {label:'AI ACCELERATORS · 2016 COHORT', rows:[
+      {name:'Habana', start:2016, end:2019, type:'acquired', note:'$2B · 英特尔 2019', cat:'INTEL'},
+      {name:'Pensando', start:2019, end:2022, type:'acquired', note:'$1.9B · AMD 2022', cat:'AMD'},
+      {name:'Graphcore', start:2016, end:2024, type:'acquired', note:'~$0.55B · 软银 2024', cat:'SOFTBANK'},
+      {name:'Groq', start:2016, end:2025, type:'acquired', note:'~$20B 许可+人才 · NVIDIA 2025', cat:'NVIDIA'},
+      {name:'Cerebras', start:2016, end:2026, type:'ipo', note:'IPO · ~$67B市值', cat:'IPO'},
+      {name:'Tenstorrent', start:2016, end:2026, type:'acquired', note:'据报道洽谈中 (2026-06)', cat:'QUALCOMM', dashed:true},
+      {name:'SambaNova', start:2017, end:2026, type:'independent', note:'转型推理服务', cat:'INDEP'}
+    ]}
+  ];
+
+  const rowH=26, sectionGapTop=26;
+  let curY = 70;
+  const drawnRows=[];
+  sections.forEach(sec=>{
+    curY += sectionGapTop;
+    drawnRows.push({section:sec.label, y:curY-16});
+    sec.rows.forEach(r=>{
+      r.y = curY;
+      drawnRows.push(r);
+      curY += rowH;
+    });
+  });
+  const totalH = curY + 40;
+
+  // assign category y positions evenly spaced across totalH
+  const catTop=90, catBottom=totalH-40;
+  catOrder.forEach((k,i)=>{
+    categories[k].y = catTop + i*((catBottom-catTop)/(catOrder.length-1));
+  });
+
+  // ---- build SVG pieces ----
+  let axis='';
+  // crisis bands
+  const crisisBands=[
+    {yr:1990.5, w:10, label:'growth stall +1.8%'},
+    {yr:2001, w:14, label:'telecom crash −32%'},
+    {yr:2022, w:14, label:'bubble burst'}
+  ];
+  crisisBands.forEach(b=>{
+    const cx=yx(b.yr);
+    axis += `<rect x="${cx-b.w/2}" y="34" width="${b.w}" height="${totalH-70}" fill="${RED}" opacity="0.07"/>`;
+    axis += `<text x="${cx}" y="26" text-anchor="middle" font-size="10" fill="${RED}" font-family="SFMono-Regular,monospace">${b.label}</text>`;
+  });
+  axis += `<line x1="${xTrackStart}" y1="34" x2="${xTrackEnd}" y2="34" stroke="${LINE}"/>`;
+  [1980,1990,2000,2010,2020,2025].forEach(yr=>{
+    axis += `<text x="${yx(yr)}" y="18" text-anchor="middle" font-size="10.5" fill="${INKFAINT}" font-family="SFMono-Regular,monospace">${yr}</text>`;
+  });
+  axis += `<text x="${(xTrackStart+xTrackEnd)/2}" y="${totalH-16}" text-anchor="middle" font-size="10.5" fill="${INKFAINT}" font-family="SFMono-Regular,monospace">THE FLAT YEARS · duopoly revenue barely moved (2004–2012)</text>`;
+
+  let rowsSvg='';
+  let ribbons='';
+  drawnRows.forEach(r=>{
+    if(r.section){
+      rowsSvg += `<text x="${xTrackStart-10}" y="${r.y}" text-anchor="end" font-size="10.5" font-family="SFMono-Regular,monospace" fill="${ACCENT}" font-weight="700">${r.section}</text>`;
+      return;
+    }
+    const x0=yx(r.start), x1=yx(r.end||2026);
+    rowsSvg += `<text x="${xTrackStart-10}" y="${r.y+4}" text-anchor="end" font-size="12" fill="${INK}">${r.name}</text>`;
+    rowsSvg += `<text x="${x0}" y="${r.y-8}" text-anchor="start" font-size="9.5" fill="${INKFAINT}" font-family="SFMono-Regular,monospace">${r.start}</text>`;
+    rowsSvg += `<line x1="${x0}" y1="${r.y}" x2="${x1}" y2="${r.y}" stroke="${INK}" stroke-width="2.4" opacity="0.8"/>`;
+    if(r.type==='dissolved'){
+      rowsSvg += `<text x="${x1+8}" y="${r.y+4}" font-size="10.5" fill="${RED}">✕ ${r.note}</text>`;
+      const c=categories[r.cat];
+      ribbons += bezRibbon(x1, r.y, xTrackEnd+40, c.y, GREY, 2, true);
+    } else if(r.type==='plain'){
+      rowsSvg += `<text x="${x1+8}" y="${r.y+4}" font-size="10.5" fill="${INKFAINT}">${r.note}</text>`;
+    } else if(r.type==='independent'){
+      rowsSvg += `<circle cx="${x1}" cy="${r.y}" r="3.5" fill="${GREEN}"/>`;
+      rowsSvg += `<text x="${x1+8}" y="${r.y+4}" font-size="10.5" fill="${GREEN}">● ${r.note}</text>`;
+      const c=categories[r.cat];
+      ribbons += bezRibbon(x1, r.y, xTrackEnd+40, c.y, GREEN, 2, false);
+    } else if(r.type==='ipo'){
+      rowsSvg += `<text x="${x1+8}" y="${r.y+4}" font-size="10.5" fill="${GOLD}">◆ ${r.note}</text>`;
+      const c=categories[r.cat];
+      ribbons += bezRibbon(x1, r.y, xTrackEnd+40, c.y, GOLD, 3, false);
+    } else if(r.type==='acquired'){
+      rowsSvg += `<text x="${x1+8}" y="${r.y+4}" font-size="10.5" fill="${INK}" font-weight="600">→ ${r.note}</text>`;
+      const c=categories[r.cat];
+      ribbons += bezRibbon(x1, r.y, xTrackEnd+40, c.y, c.color, 3, !!r.dashed);
+    }
+  });
+
+  function bezRibbon(x0,y0,x1,y1,color,width,dashed){
+    const mx=(x0+x1)/2+30;
+    return `<path d="M ${x0} ${y0} C ${mx} ${y0}, ${mx} ${y1}, ${x1-8} ${y1}" stroke="${color}" stroke-width="${width}" fill="none" opacity="0.5" ${dashed?'stroke-dasharray="5,4"':''}/>`;
+  }
+
+  let catSvg='';
+  catOrder.forEach(k=>{
+    const c=categories[k];
+    const bw=200, bh=30;
+    catSvg += `<rect x="${xTrackEnd+40}" y="${c.y-bh/2}" width="${bw}" height="${bh}" fill="${c.color}" opacity="0.1" stroke="${c.color}" stroke-width="1.2" rx="4" ${c.dashedBox?'stroke-dasharray="5,4"':''}/>`;
+    catSvg += `<text x="${xTrackEnd+52}" y="${c.y-2}" font-size="12" fill="${INK}" font-weight="700" font-family="SFMono-Regular,monospace">${c.label}</text>`;
+    catSvg += `<text x="${xTrackEnd+bw+28}" y="${c.y-2}" text-anchor="end" font-size="12" fill="${c.color}" font-weight="700">×${c.count}</text>`;
+    if(c.sub) catSvg += `<text x="${xTrackEnd+52}" y="${c.y+13}" font-size="9.5" fill="${INKFAINT}">${c.sub}</text>`;
+  });
+
+  el.innerHTML = `<svg viewBox="0 0 1500 ${totalH}" width="1500" height="${totalH}" style="max-width:none; display:block;">${axis}${ribbons}${rowsSvg}${catSvg}</svg>`;
+})();
+
+/* ============ Submerged timeline ============ */
+(function(){
+  const el = document.getElementById('submergedChart');
+  const yStart=2012, yEnd=2019;
+  const padL=40, padR=30, W=980;
+  const plotW=W-padL-padR;
+  const x = y => padL + (y-yStart)/(yEnd-yStart)*plotW;
+  const surfaceY=110, boxBottom=300;
+
+  const items = [
+    {name:'Microsoft Catapult', nameZh:'微软 Catapult', deploy:2012.95, deployLab:'deployed end-2012', deployLabZh:'部署于2012年底',
+      disclose:2014.45, discloseLab:'ISCA 2014 paper', discloseDate:'2014-06 disclosed', gap:'submerged 1.5 yrs', flagY:60, badgeY:220},
+    {name:'Google TPU v1', nameZh:'Google TPU v1', deploy:2015.0, deployLab:'deployed 2015', deployLabZh:'部署于2015年',
+      disclose:2016.37, discloseLab:'Google I/O reveals TPU', discloseDate:'2016-05 disclosed', gap:'submerged 1.4 yrs', flagY:150, badgeY:260},
+    {name:'Microsoft Brainwave', nameZh:'微软 Brainwave', deploy:2016.5, deployLab:'deployed mid-2016', deployLabZh:'部署于2016年年中',
+      disclose:2017.6, discloseLab:'Hot Chips reveals Brainwave', discloseDate:'2017-08 disclosed', gap:'submerged 1.1 yrs', flagY:70, badgeY:220}
+  ];
+
+  let svg='';
+  // submerged shaded region
+  svg += `<rect x="${padL}" y="${surfaceY}" width="${plotW}" height="${boxBottom-surfaceY}" fill="${BLUESOFT}" opacity="0.5"/>`;
+  svg += `<text x="${padL}" y="30" font-size="13" fill="${INK}" font-weight="600">disclosure lags deployment by 1–2 years · 披露滞后于部署1到2年</text>`;
+  svg += `<line x1="${padL}" y1="${surfaceY}" x2="${W-padR}" y2="${surfaceY}" stroke="${ACCENT}" stroke-width="1.4" stroke-dasharray="6,4"/>`;
+  svg += `<text x="${W-padR}" y="${surfaceY-8}" text-anchor="end" font-size="10.5" fill="${ACCENT}" font-family="SFMono-Regular,monospace">surface = public record（披露）</text>`;
+  svg += `<text x="${W-padR}" y="${boxBottom+16}" text-anchor="end" font-size="10.5" fill="${BLUE}" font-family="SFMono-Regular,monospace">below = actual deployment（部署）</text>`;
+
+  for(let yr=yStart;yr<=yEnd;yr++){
+    svg += `<text x="${x(yr)}" y="${boxBottom+34}" text-anchor="middle" font-size="10.5" fill="${INKFAINT}">${yr}</text>`;
+    svg += `<line x1="${x(yr)}" y1="${surfaceY}" x2="${x(yr)}" y2="${boxBottom}" stroke="${LINE}" stroke-width="0.5"/>`;
+  }
+
+  items.forEach(it=>{
+    const dxDeploy=x(it.deploy), dxDisc=x(it.disclose);
+    // dotted diagonal connecting disclosure (surface) to deployment (submerged)
+    svg += `<line x1="${dxDisc}" y1="${surfaceY}" x2="${dxDeploy}" y2="${it.badgeY}" stroke="${INKFAINT}" stroke-dasharray="3,3" stroke-width="1.2"/>`;
+    // flag marker above surface at disclosure x
+    svg += `<path d="M ${dxDisc} ${it.flagY} L ${dxDisc} ${surfaceY} M ${dxDisc} ${it.flagY} L ${dxDisc+16} ${it.flagY+5} L ${dxDisc} ${it.flagY+10} Z" fill="${ACCENT}" stroke="${ACCENT}"/>`;
+    svg += `<text x="${dxDisc+22}" y="${it.flagY+2}" font-size="11.5" fill="${INK}" font-weight="600">${it.discloseLab}</text>`;
+    svg += `<text x="${dxDisc+22}" y="${it.flagY+16}" font-size="10" fill="${ACCENT}" font-family="SFMono-Regular,monospace">${it.discloseDate}</text>`;
+    // pill badge in submerged zone
+    svg += `<rect x="${dxDeploy-24}" y="${it.badgeY-11}" width="48" height="22" rx="11" fill="${INK}"/>`;
+    svg += `<circle cx="${dxDeploy-8}" cy="${it.badgeY}" r="2.2" fill="${PAPER}"/><circle cx="${dxDeploy}" cy="${it.badgeY}" r="2.2" fill="${PAPER}"/><circle cx="${dxDeploy+8}" cy="${it.badgeY}" r="2.2" fill="${PAPER}"/>`;
+    svg += `<text x="${dxDeploy}" y="${it.badgeY+30}" text-anchor="middle" font-size="11" fill="${INK}" font-weight="600">${it.name}</text>`;
+    svg += `<text x="${dxDeploy}" y="${it.badgeY+44}" text-anchor="middle" font-size="10" fill="${INKFAINT}">${it.deployLab}</text>`;
+    svg += `<text x="${dxDeploy}" y="${it.badgeY+58}" text-anchor="middle" font-size="10" fill="${BLUE}" font-family="SFMono-Regular,monospace">↕ ${it.gap}</text>`;
+  });
+
+  el.innerHTML = `<svg viewBox="0 0 ${W} 400" width="1000" height="400" style="max-width:none; display:block;">${svg}</svg>`;
+})();
+
+/* ============ TPU chart with paradigm bands (bespoke renderer) ============ */
+(function(){
+  const el = document.getElementById('chartTPU');
+  const W=980, H=340, padL=56, padR=20, padT=64, padB=36;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+  const yMin=0.03, yMax=20;
+  function yFor(v){ const lv=Math.log10(v), lmin=Math.log10(yMin), lmax=Math.log10(yMax); return H-padB-((lv-lmin)/(lmax-lmin))*plotH; }
+  const xMin=2014.4, xMax=2026.6;
+  function xFor(yr){ return padL + (yr-xMin)/(xMax-xMin)*plotW; }
+
+  const pts = [
+    {g:'v1', yr:2015,   v:0.092, unit:'92 TOPS INT8'},
+    {g:'v2', yr:2017.7, v:0.045, unit:'45 TFLOPS bf16'},
+    {g:'v3', yr:2018.3, v:0.105, unit:'105 TFLOPS bf16'},
+    {g:'v4', yr:2021,   v:0.275, unit:'275 TFLOPS bf16'},
+    {g:'v5p',yr:2023,   v:0.459, unit:'459 TFLOPS FP8'},
+    {g:'v6', yr:2024,   v:0.918, unit:'918 TFLOPS FP8'},
+    {g:'v7', yr:2025,   v:4.614, unit:'4,614 TFLOPS FP8'},
+    {g:'v8t',yr:2026,   v:12.6,  unit:'12.6 PFLOPS FP4'}
+  ];
+
+  let svg='';
+  // paradigm bands
+  const bands=[
+    {x0:2014.4, x1:2017.9, color:'rgba(180,170,140,0.20)', label:'CNN'},
+    {x0:2017.9, x1:2021.5, color:'rgba(126,166,190,0.20)', label:'RNN / NMT'},
+    {x0:2021.5, x1:2026.6, color:'rgba(193,96,60,0.10)', label:'TRANSFORMER → INFERENCE'}
+  ];
+  bands.forEach(b=>{
+    const bx0=xFor(b.x0), bx1=xFor(b.x1);
+    svg += `<rect x="${bx0}" y="${padT}" width="${bx1-bx0}" height="${plotH}" fill="${b.color}"/>`;
+    svg += `<text x="${(bx0+bx1)/2}" y="${padT-10}" text-anchor="middle" font-size="10.5" fill="${INKFAINT}" font-family="SFMono-Regular,monospace" letter-spacing="0.5">${b.label}</text>`;
+  });
+
+  // y gridlines: 100T=0.1, 1P=1, 10P=10
+  [{v:0.1,l:'100T'},{v:1,l:'1P'},{v:10,l:'10P'}].forEach(g=>{
+    const gy=yFor(g.v);
+    svg += `<line x1="${padL}" y1="${gy}" x2="${W-padR}" y2="${gy}" stroke="#EDE6D4"/>`;
+    svg += `<text x="${padL-8}" y="${gy+4}" text-anchor="end" font-size="10.5" fill="${INKFAINT}" font-family="SFMono-Regular,monospace">${g.l}</text>`;
+  });
+  svg += `<text x="${padL-40}" y="${padT-24}" font-size="10" fill="${INKFAINT}" font-family="SFMono-Regular,monospace" transform="rotate(-90 ${padL-40} ${padT+plotH/2})" text-anchor="middle">Peak compute, FLOPS (log)</text>`;
+
+  // x axis ticks
+  [2015,2018,2021,2024,2026].forEach(yr=>{
+    svg += `<text x="${xFor(yr)}" y="${H-padB+18}" text-anchor="middle" font-size="10.5" fill="${INKFAINT}" font-family="SFMono-Regular,monospace">${yr}</text>`;
+  });
+
+  // annotation block top-left
+  svg += `<text x="${padL+6}" y="${padT+22}" font-size="13" fill="${ACCENT}" font-weight="700">11 years · 8 generations · 3 paradigm shifts</text>`;
+  svg += `<text x="${padL+6}" y="${padT+40}" font-size="10.5" fill="${INKDIM}">the matmul core unchanged for a decade = the stable operator layer</text>`;
+  svg += `<text x="${padL+6}" y="${padT+54}" font-size="10.5" fill="${INKDIM}">(first absorber of the model–silicon cadence mismatch)</text>`;
+
+  // line + points
+  let d='';
+  pts.forEach((p,i)=>{ d += (i===0?'M ':'L ') + xFor(p.yr).toFixed(1)+' '+yFor(p.v).toFixed(1)+' '; });
+  svg += `<path d="${d}" fill="none" stroke="${ACCENT}" stroke-width="2.2"/>`;
+
+  // multiplier labels between selected consecutive points
+  const mult = [
+    {from:'v2', to:'v3', label:'×2.3'},
+    {from:'v3', to:'v4', label:'×2.6'},
+    {from:'v5p', to:'v6', label:'×2.0'},
+    {from:'v6', to:'v7', label:'×5.0'}
+  ];
+  mult.forEach(m=>{
+    const p0=pts.find(p=>p.g===m.from), p1=pts.find(p=>p.g===m.to);
+    const mx=(xFor(p0.yr)+xFor(p1.yr))/2, my=(yFor(p0.v)+yFor(p1.v))/2-8;
+    svg += `<text x="${mx}" y="${my}" text-anchor="middle" font-size="10.5" fill="${ACCENT}" font-family="SFMono-Regular,monospace" font-weight="700">${m.label}</text>`;
+  });
+
+  pts.forEach((p,i)=>{
+    const px=xFor(p.yr), py=yFor(p.v);
+    const isLast = i===pts.length-1;
+    svg += `<circle cx="${px}" cy="${py}" r="${isLast?7:5.5}" fill="${isLast?ACCENT:PAPER}" stroke="${ACCENT}" stroke-width="2"/>`;
+    const labelAbove = (i%2===0);
+    const ly1 = labelAbove ? py-22 : py+18;
+    const ly2 = labelAbove ? py-9 : py+31;
+    svg += `<text x="${px}" y="${ly1}" text-anchor="middle" font-size="11.5" fill="${isLast?ACCENT:INK}" font-weight="700">${p.g} (${Math.floor(p.yr)})</text>`;
+    svg += `<text x="${px}" y="${ly2}" text-anchor="middle" font-size="10" fill="${INKFAINT}">${p.unit}</text>`;
+  });
+
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}">${svg}</svg>`;
+})();
+
+/* ============ Many clocks radar/wheel (custom SVG) ============ */
+(function(){
+  const svg = document.getElementById('wheelSvg');
+  const cx=160, cy=160, maxR=125;
+  const rings=[
+    {r:30,label:''},{r:65,label:''},{r:100,label:''},{r:125,label:''}
+  ];
+  const dirs=[
+    {label:'FORMATION',angle:-90},
+    {label:'EXPANSION',angle:0},
+    {label:'PEAK WATCH',angle:90},
+    {label:'CLEARING',angle:180}
+  ];
+  const points=[
+    {name:'Analog / power',angle:-55,r:0.55,phase:'RECOVERING',color:INK},
+    {name:'AI compute',angle:25,r:1.0,phase:'ARMS RACE',color:BLUE},
+    {name:'AI-pulled memory',angle:55,r:0.95,phase:'ARMS RACE',color:BLUE},
+    {name:'Smartphone silicon',angle:170,r:0.75,phase:'CLEARING',color:RED},
+    {name:'Automotive / RF',angle:200,r:0.5,phase:'CLEARING',color:GREY}
+  ];
+  let svgHtml='';
+  rings.forEach(rg=>{ svgHtml+=`<circle cx="${cx}" cy="${cy}" r="${rg.r}" fill="none" stroke="${LINE}" stroke-width="1"/>`; });
+  dirs.forEach(d=>{
+    const rad=d.angle*Math.PI/180;
+    const lx=cx+Math.cos(rad)*(maxR+22), ly=cy+Math.sin(rad)*(maxR+22);
+    svgHtml+=`<line x1="${cx}" y1="${cy}" x2="${cx+Math.cos(rad)*maxR}" y2="${cy+Math.sin(rad)*maxR}" stroke="${LINE}" stroke-width="1"/>`;
+    svgHtml+=`<text x="${lx}" y="${ly}" text-anchor="middle" font-size="10.5" font-family="SFMono-Regular,monospace" fill="${INKFAINT}">${d.label}</text>`;
+  });
+  svgHtml+=`<circle cx="${cx}" cy="${cy}" r="3" fill="${INK}"/><text x="${cx}" y="${cy-8}" text-anchor="middle" font-size="10" fill="${INKFAINT}">five clocks</text>`;
+  points.forEach(p=>{
+    const rad=p.angle*Math.PI/180;
+    const px=cx+Math.cos(rad)*maxR*p.r, py=cy+Math.sin(rad)*maxR*p.r;
+    svgHtml+=`<line x1="${cx}" y1="${cy}" x2="${px}" y2="${py}" stroke="${p.color}" stroke-width="1.5" stroke-dasharray="3,2"/>`;
+    svgHtml+=`<circle cx="${px}" cy="${py}" r="6" fill="${p.color}"/>`;
+  });
+  svg.innerHTML = svgHtml;
+
+  const legend = document.getElementById('wheelLegend');
+  legend.innerHTML = points.map(p=>`<div class="wheel-legend-item"><span class="wheel-dot" style="background:${p.color};"></span><div><b>${p.name}</b><span class="phase">${p.phase}</span></div></div>`).join('')
+    + `<p class="footnote" style="margin-top:14px;">两个火热（军备竞赛）· 一个已恢复（完整U型）· 两个仍在修正——子周期可以彼此脱钩；这正是"模拟U型"所证明的。</p>`;
+})();
+
+/* ============ Mining mirror timeline ============ */
+(function(){
+  const el = document.getElementById('miningMirror');
+  const yStart=2017, yEnd=2023.5, w=880;
+  const x = y => ((y-yStart)/(yEnd-yStart))*w+30;
+  let svg='';
+  // Cycle 1
+  svg += `<text x="20" y="30" font-size="12.5" font-weight="600" fill="${INK}">Cycle 1 · 2017–2019</text>`;
+  svg += `<text x="600" y="30" font-size="11" fill="${INKFAINT}" font-family="SFMono-Regular,monospace">transmission: 13 months, price peak → order freeze</text>`;
+  svg += `<line x1="20" y1="60" x2="${x(2019.3)}" y2="60" stroke="${LINE}"/>`;
+  svg += `<circle cx="${x(2017.95)}" cy="60" r="7" fill="${ACCENT}"/>`;
+  svg += `<text x="${x(2017.95)}" y="82" text-anchor="middle" font-size="10.5" fill="${INKFAINT}">BTC peaks ~$19.7K</text>`;
+  svg += `<circle cx="${x(2018.05)}" cy="60" r="4" fill="${INK}"/>`;
+  svg += `<text x="${x(2018.05)}" y="100" text-anchor="middle" font-size="10.5" fill="${INKFAINT}">Bitmain files HKEX IPO</text>`;
+  svg += `<circle cx="${x(2019.05)}" cy="60" r="4" fill="${BLUE}"/>`;
+  svg += `<text x="${x(2019.05)}" y="45" text-anchor="middle" font-size="10.5" fill="${BLUE}">NVDA cuts Q4 guide $2.7B→$2.2B; TSMC trims outlook</text>`;
+  svg += `<circle cx="${x(2019.25)}" cy="60" r="4" fill="${BLUE}"/>`;
+  svg += `<text x="${x(2019.25)}" y="82" text-anchor="middle" font-size="10.5" fill="${BLUE}">NVDA stock −54% from Oct peak; Alchip FY18 −19%</text>`;
+
+  // Cycle 2
+  const yo=170;
+  svg += `<text x="20" y="${yo-40}" font-size="12.5" font-weight="600" fill="${INK}">Cycle 2 · 2021–2023</text>`;
+  svg += `<text x="600" y="${yo-40}" font-size="11" fill="${INKFAINT}" font-family="SFMono-Regular,monospace">transmission: 9 months, price peak → inventory charge</text>`;
+  svg += `<line x1="20" y1="${yo}" x2="${x(2023.3)}" y2="${yo}" stroke="${LINE}"/>`;
+  svg += `<circle cx="${x(2021.3)}" cy="${yo}" r="4" fill="${INK}"/>`;
+  svg += `<text x="${x(2021.3)}" y="${yo+20}" text-anchor="middle" font-size="10.5" fill="${INKFAINT}">GUC: AI/ML becomes largest bucket — crypto-linked</text>`;
+  svg += `<circle cx="${x(2021.9)}" cy="${yo}" r="7" fill="${ACCENT}"/>`;
+  svg += `<text x="${x(2021.9)}" y="${yo-15}" text-anchor="middle" font-size="10.5" fill="${INKFAINT}">BTC peaks ~$69K</text>`;
+  svg += `<circle cx="${x(2022.6)}" cy="${yo}" r="4" fill="${BLUE}"/>`;
+  svg += `<text x="${x(2022.6)}" y="${yo+40}" text-anchor="middle" font-size="10.5" fill="${BLUE}">NVDA $1.34B inventory charge; gaming −44% q/q</text>`;
+  svg += `<circle cx="${x(2022.75)}" cy="${yo}" r="4" fill="${BLUE}"/>`;
+  svg += `<text x="${x(2022.75)}" y="${yo-15}" text-anchor="middle" font-size="10.5" fill="${BLUE}">Ethereum merge ends GPU mining</text>`;
+  svg += `<circle cx="${x(2023.2)}" cy="${yo}" r="7" fill="${ACCENT}"/>`;
+  svg += `<text x="${x(2023.2)}" y="${yo+20}" text-anchor="middle" font-size="10.5" fill="${INKFAINT}">GUC AI/ML mix rolls to ~18% of 9M 2022 sales</text>`;
+
+  for(let yr=2018;yr<=2023;yr++){
+    svg += `<text x="${x(yr)}" y="${yo+70}" text-anchor="middle" font-size="10.5" fill="${INKFAINT}">${yr}</text>`;
+  }
+
+  el.innerHTML = `<svg viewBox="0 0 920 260" width="100%" height="260">${svg}</svg>`;
+})();
+
+/* ============ Alchip annual with shaded unwind ============ */
+svgBarChart('chartAlchip',
+  ['FY2016','FY2017','FY2018','FY2019'],
+  [{label:'年度营收(NT$B)', data:[3.69,4.27,3.45,4.33], color:BLUE}],
+  {height:220, legend:false, showValues:true, shadeIndex:2, shadeLabel:'the 2018 crypto tooth'}
+);
+document.getElementById('alchipNote').textContent = 'annual · FY16 3.69 → FY17 4.27 → FY18 3.45 → FY19 4.33 (NT$B)';
+
+/* ============ GUC quarterly ============ */
+svgBarChart('chartGUC',
+  ['16Q1','16Q2','16Q3','16Q4','17Q1','17Q2','17Q3','17Q4','18Q1','18Q2','18Q3','18Q4','19Q1','19Q2','19Q3','19Q4'],
+  [{label:'季度营收(NT$B, 示意)', data:[1.5,1.6,1.7,1.9,2.1,2.5,2.8,2.6,2.9,2.7,2.3,2.0,1.9,2.0,2.1,2.3], color:GOLD}],
+  {height:220, legend:false}
+);
+
+/* ============ Capex by company ============ */
+svgBarChart('chartCapex',
+  ['FY2023','FY2024','FY2025','2026E'],
+  [
+    {label:'亚马逊', data:[48,77,125,200], color:BLUE},
+    {label:'微软', data:[32,44,64,100], color:ACCENT},
+    {label:'Google', data:[32,52,91,175], color:GOLD},
+    {label:'Meta', data:[28,39,72,115], color:GREEN}
+  ],
+  {stacked:true, height:260}
+);
+
+/* ============ Capex/OCF ratio ============ */
+svgLineChart('chartCapexRatio',
+  ['FY2023','FY2024','FY2025','TTM(2026Q1)'],
+  [
+    {label:'亚马逊', data:[0.55,0.68,0.9,1.02], color:BLUE},
+    {label:'微软', data:[0.45,0.5,0.6,0.63], color:ACCENT},
+    {label:'Google', data:[0.4,0.48,0.58,0.62], color:GOLD},
+    {label:'Meta', data:[0.38,0.45,0.55,0.6], color:GREEN},
+    {label:'合计（前四大）', data:[0.41,0.5,0.62,0.71], color:INK, dash:'6,4', points:false}
+  ],
+  {min:0, max:1.15, height:220}
+);
+
+/* ============ Crossover ============ */
+svgLineChart('chartCrossover',
+  ['2025','2027F'],
+  [
+    {label:'ASIC阵营占台积电AI营收', data:[25,32.5], color:BLUE, fmt:v=>v+'%'},
+    {label:'50%交叉线', data:[50,50], color:RED, dash:'6,4', points:false}
+  ],
+  {min:0, max:60, height:160, showValues:true}
+);
+
+/* ============ Per-GW panel (custom HTML) ============ */
+(function(){
+  const el = document.getElementById('perGWPanel');
+  function dotgrid(n,cls){
+    let s='';
+    for(let i=0;i<n;i++) s+='<span></span>';
+    return `<div class="dotgrid ${cls}">${s}</div>`;
+  }
+  el.innerHTML = `
+    <div class="pergw-panel">
+      <h5>DIES / GW</h5>
+      ${dotgrid(6,'')}
+      <div class="pergw-val">~0.6M</div><div class="pergw-lab">RUBIN</div>
+      ${dotgrid(12,'blue')}
+      <div class="pergw-val">~1.2M</div><div class="pergw-lab">TPU V7</div>
+      <p class="cc-note" style="font-size:11.5px;">≈2× the silicon for 1 GW</p>
+    </div>
+    <div class="pergw-panel">
+      <h5>RACK ASP</h5>
+      <div class="pergw-bars">
+        <div class="pergw-bar-col"><div class="pergw-val">~$6mn</div><div class="pergw-bar" style="height:100px; background:${INK};"></div><div class="pergw-bar-label">RUBIN</div></div>
+        <div class="pergw-bar-col"><div class="pergw-val">~$2mn</div><div class="pergw-bar" style="height:34px; background:${BLUE};"></div><div class="pergw-bar-label">TPU V7</div></div>
+      </div>
+      <p class="cc-note" style="font-size:11.5px;">density vs volume — two valid answers</p>
+    </div>
+    <div class="pergw-panel">
+      <h5>TSMC REVENUE / GW</h5>
+      <div class="pergw-bars">
+        <div class="pergw-bar-col"><div class="pergw-val">~$1.1bn</div><div class="pergw-bar" style="height:58px; background:${INK};"></div><div class="pergw-bar-label">RUBIN</div></div>
+        <div class="pergw-bar-col"><div class="pergw-val">~$1.9bn</div><div class="pergw-bar" style="height:100px; background:${BLUE};"></div><div class="pergw-bar-label">TPU V7</div></div>
+      </div>
+      <p class="cc-note" style="font-size:11.5px;">the constant in both answers</p>
+    </div>
+  `;
+})();
+
+/* ============ Four-gate ladder ============ */
+(function(){
+  const el = document.getElementById('ladderPanel');
+  const gates = [
+    {rank:1, name:'HBM', desc:'三家寡头 + HBM4晶圆转换损耗约30% + 高盛测算2027年DRAM缺口−3.3%；无绕行路线', score:10, bypass:[], bc:'base: tight · conservative: eases last', r1:true},
+    {rank:2, name:'先进制程', desc:'台积电独家供应；3nm利用率2026Q4达101%（2026年产能14–15万片/月，受限于洁净室）；2nm是两年内唯一出口', score:10, bypass:[], bc:'base: tight · conservative: eases last', r1:true},
+    {rank:3, name:'CoWoS', desc:'2027年需求+93%，但OSAT外包与英特尔EMIB提供了真实绕行方案', score:8, bypass:['↳ OSAT外包','↳ 英特尔EMIB'], bc:'base: tight · conservative: eases first'},
+    {rank:4, name:'光互连', desc:'多供应商竞争，铜/光之争未决，光模块含量渐进式提升', score:7, bypass:['↳ 多家供应商','↳ 铜光并存'], bc:'base: tight · conservative: eases first'}
+  ];
+  el.innerHTML = gates.map(g=>{
+    let blocks='';
+    for(let i=0;i<10;i++) blocks+=`<span class="${i<g.score?'filled':''}"></span>`;
+    return `<div class="ladder-row">
+      <div class="ladder-rank ${g.r1?'r1':''}">${g.rank}</div>
+      <div class="ladder-gate"><h5>${g.name}</h5><p>${g.desc}</p></div>
+      <div><div class="score-blocks">${blocks}</div><div class="score-num">${g.score}/10</div></div>
+      <div>${g.bypass.length? g.bypass.map(b=>`<span class="bypass-tag">${b}</span>`).join('') : '<span class="bypass-tag" style="color:'+RED+';">无绕行方案</span>'}</div>
+      <div class="basecons">${g.bc}</div>
+    </div>`;
+  }).join('');
+})();
+
+/* ============ CoWoS towers (pseudo-iso) ============ */
+(function(){
+  const el = document.getElementById('cowosTowers');
+  const data = [
+    {label:'YE2023', v:14.5, h:30, mult:'', forecast:false},
+    {label:'YE2024', v:37.5, h:75, mult:'×2.6 vs 2023', forecast:false},
+    {label:'YE2025', v:77.5, h:150, mult:'×5.3 vs 2023', forecast:false},
+    {label:'2026E', v:92.5, h:175, mult:'×6.4 vs 2023', forecast:true},
+    {label:'2027E', v:135, h:220, mult:'×9.3 vs 2023', forecast:true}
+  ];
+  el.innerHTML = data.map(d=>`
+    <div class="tower-col">
+      <div class="tower-val">${d.v} kwpm</div>
+      <div class="tower-mult">${d.mult}</div>
+      <div class="iso-tower">
+        <div class="iso-front ${d.forecast?'forecast':''}" style="height:${d.h}px; width:56px;"></div>
+      </div>
+      <div class="tower-label">${d.label}</div>
+    </div>
+  `).join('');
+})();
+
+/* ============ HBM stack ============ */
+(function(){
+  const el = document.getElementById('hbmStack');
+  const gens = [
+    {name:'HBM2/2e', sub:"2016/2020–21 · 4Hi", hi:4},
+    {name:'HBM3', sub:'2022 · 8Hi', hi:8},
+    {name:'HBM3e', sub:'2024 · 12Hi', hi:12},
+    {name:'HBM4', sub:'2025–2026 · 16Hi', hi:16}
+  ];
+  el.innerHTML = gens.map(g=>{
+    let slabs='';
+    for(let i=0;i<g.hi;i++){
+      slabs += `<div class="hbm-slab ${i===g.hi-1?'top':''}"></div>`;
+    }
+    return `<div class="hbm-col">${slabs}<div class="hbm-label">${g.name}</div><div class="hbm-sub">${g.sub}</div></div>`;
+  }).join('');
+
+  const bars = document.getElementById('hbmBars');
+  bars.innerHTML = `
+    <div class="hbm-bar-item">
+      <div class="lab">2023 · HBM占DRAM营收</div>
+      <div class="hbm-bar-track"><div class="hbm-bar-fill" style="width:8%;">8%</div></div>
+    </div>
+    <div class="hbm-bar-item">
+      <div class="lab">2026E · HBM占DRAM营收（估算）</div>
+      <div class="hbm-bar-track"><div class="hbm-bar-fill" style="width:41%;">41%</div></div>
+    </div>
+  `;
+})();
+
+/* ============ Power bars + mechanics ============ */
+(function(){
+  const bars = document.getElementById('powerBars');
+  const commits = [
+    {name:'OpenAI', gw:10, note:'framework · first deployment end-2026'},
+    {name:'Anthropic', gw:5, note:'from 2027 · verbatim in Broadcom FY2026Q2 call'},
+    {name:'Meta', gw:3, note:'to end-2028 · Broadcom call customer map'}
+  ];
+  bars.innerHTML = `<p class="cc-note" style="margin-top:0;">命名吉瓦承诺（access / framework — 非新签供电合同）</p>` +
+    commits.map(c=>`
+    <div class="power-bar-item">
+      <div class="plab"><span>${c.name}</span><span>${c.gw} GW</span></div>
+      <div class="power-bar-track"><div class="power-bar-fill" style="width:${c.gw*9}%;"></div></div>
+      <div class="power-note">${c.note}</div>
+    </div>
+  `).join('');
+
+  const mech = document.getElementById('powerMech');
+  mech.innerHTML = `
+    <p class="cc-note" style="margin-top:0;">约束的机制：为何是交付，而非硅片，设定了节奏</p>
+    <div class="mech-stat"><div class="mv">120 kW</div><div class="ml">每台GB200 NVL72机架 — ~16×普通企业机架</div></div>
+    <div class="mech-stat"><div class="mv">18–24 mo</div><div class="ml">建设并通电一座数据中心外壳 — 资本就绪 ≠ 外壳就绪</div></div>
+    <div class="mech-arrow up">▲ 强化：互联排队延长 + 资本开支持续两个季度</div>
+    <div class="mech-arrow down">▼ 减弱：电力合同价格回落 + GPU库存出清</div>
+  `;
+})();
+
+/* ============ Concentration dual panel (custom) ============ */
+function renderConcentration(elId){
+  const el = document.getElementById(elId);
+  const custYears=['2023','2024','2025','2026E'];
+  const custVals=[1,3,5,6];
+  const shareYears=['FY23','FY24','FY25','FY26E','FY27E','FY28E'];
+  const shareVals=[8.6,16.2,24.3,40,43,47];
+  const shareForecast=[false,false,false,true,true,true];
+  const maxCust=Math.max(...custVals);
+  const maxShare=50;
+
+  let leftHtml = `<div><div class="conc-title">Broadcom XPU customers</div><div class="conc-bars">`;
+  custYears.forEach((y,i)=>{
+    const h = (custVals[i]/maxCust*100).toFixed(0);
+    leftHtml += `<div class="conc-col"><div class="conc-val">${custVals[i]}</div><div class="conc-bar ${i===custYears.length-1?'hi':''}" style="height:${h}%;"></div><div class="conc-x">${y}</div></div>`;
+  });
+  leftHtml += `</div></div>`;
+
+  let rightHtml = `<div><div class="conc-title">Google's share of Broadcom revenue</div><div class="conc-bars">`;
+  shareYears.forEach((y,i)=>{
+    const h = (shareVals[i]/maxShare*100).toFixed(0);
+    rightHtml += `<div class="conc-col"><div class="conc-val">${shareVals[i]}%</div><div class="conc-bar ${shareForecast[i]?'forecast':''}" style="height:${h}%; background:${shareForecast[i]?'':ACCENT};"></div><div class="conc-x">${y}</div></div>`;
+  });
+  rightHtml += `</div><div class="conc-note">broker estimates · open = estimate (FY26E–28E)</div></div>`;
+
+  el.innerHTML = leftHtml + rightHtml;
+}
+renderConcentration('concentrationPanel');
+</script>
+
+</body>
+</html>
