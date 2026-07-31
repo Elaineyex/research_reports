@@ -63,6 +63,18 @@
   .chart-card canvas{max-width:100%;}
   .cc-src{font-size:11px; color:var(--ink-faint); text-align:right; margin-top:10px; font-family:var(--mono);}
   .cc-note{font-size:13px; color:var(--ink-dim); font-style:italic; margin-top:10px;}
+  .svg-tip{
+    position:fixed; pointer-events:none; z-index:999; max-width:260px;
+    background:var(--ink); color:var(--paper); font-family:var(--mono); font-size:11.5px;
+    padding:7px 11px; border-radius:5px; line-height:1.55; box-shadow:0 6px 18px rgba(0,0,0,.2);
+    opacity:0; transform:translateY(2px); transition:opacity .12s ease, transform .12s ease;
+  }
+  .svg-tip b{color:var(--paper); font-weight:700;}
+  .svg-tip i{color:var(--accent-soft, #F0DCCC); font-style:normal; opacity:.85;}
+  .svg-tip.show{opacity:1; transform:translateY(0);}
+  svg [data-tt]{cursor:pointer;}
+  svg rect[data-tt]:hover{opacity:.82;}
+  svg circle[data-tt]:hover{r:6.5; stroke:var(--paper); stroke-width:1.5;}
 
   table.data{width:100%; border-collapse:collapse; margin:22px 0; font-size:14px;}
   table.data th{background:var(--paper-alt); color:var(--ink-dim); text-align:left; padding:10px 12px; font-weight:600; border-bottom:2px solid var(--line-strong); font-family:var(--mono); font-size:12px; letter-spacing:.03em; text-transform:uppercase;}
@@ -296,6 +308,7 @@
     <a href="#s10">§10 · 监测</a>
     <a href="#s11">§11 · 公司深度剖析</a>
     <a href="#app">附录 · 数据来源与方法</a>
+    <a href="#glossary">术语表 · 名词解释</a>
   </div>
 </div>
 </div>
@@ -572,16 +585,16 @@
 
   <div class="chart-card">
     <div class="cc-title">逐公司资本开支：FY2023–2026E</div>
-    <div class="cc-sub">十亿美元 · 按申报口径 · 亚马逊为总额 · Meta含租赁 · 微软为6月财年</div>
+    <div class="cc-sub">十亿美元 · 按申报口径 · 亚马逊为总额 · Meta含租赁 · 微软为6月财年 · 指针悬停查看各公司数值</div>
     <div id="chartCapex"></div>
-    <div class="cc-src">口径为申报基础；券商综合口径更高（2025年约4130亿美元，野村证券），因其定义更宽泛。来源：公司披露</div>
+    <div class="cc-src">FY2023–2025为SEC 10-K申报实际值。2026E列：微软FY2026（截至2026-06-30）10-K已提交，为实际值；亚马逊/Google/Meta自然年未结束，取各自最新一次财报电话会指引区间中值——Google与Meta本季度均再度上调指引（2026-07-22、2026-07-29），亚马逊维持$200B不变，其Q2'26财报定于2026-07-30盘后发布、发布前不采信市场传闻（各柱悬浮提示含完整指引沿革与上一版对比）。口径为申报基础；券商综合口径更高（2025年约4130亿美元，野村证券），因其定义更宽泛。来源：公司10-K/10-Q（SEC EDGAR XBRL）+ 公司财报电话会/新闻稿（Alphabet IR、Meta IR），经本项目 ingest/sec_financials.py 核实，最新指引更新于2026-07-30</div>
   </div>
 
   <div class="chart-card">
     <div class="cc-title">融资仪表盘：资本开支 ÷ 经营现金流（FY2023–TTM）</div>
-    <div class="cc-sub">比率 · FY=同年资本开支÷经营现金流 · TTM=滚动12个月，截至2026-03-31 · 红色=高于1.0</div>
+    <div class="cc-sub">比率 · FY=同年资本开支÷经营现金流 · TTM=滚动四个季度，截至2026-03-31 · 红色=高于1.0 · 指针悬停查看各公司数值</div>
     <div id="chartCapexRatio"></div>
-    <div class="cc-src">来源：公司披露</div>
+    <div class="cc-src">来源：公司10-K/10-Q（SEC EDGAR XBRL），经本项目 ingest/sec_financials.py 核实，2026-07-30</div>
   </div>
 
   <div class="stat-row">
@@ -851,6 +864,77 @@
 </div>
 </section>
 
+<!-- Glossary -->
+<section id="glossary">
+<div class="wrap">
+  <div class="sec-label">术语表 · 名词解释</div>
+  <h2>推理芯片相关术语</h2>
+  <p class="lede">按芯片架构、制造封装、设计服务商业模式、互连系统、财务指标五组归类；释义尽量落回本报告实际用到的语境，而非教科书定义。</p>
+
+  <h3>芯片架构与形态</h3>
+  <table class="data">
+    <thead><tr><th>术语</th><th>全称 / 中文</th><th>释义</th></tr></thead>
+    <tbody>
+      <tr><td>ASIC</td><td>Application-Specific Integrated Circuit · 专用集成电路</td><td>为单一固定用途定制设计、逻辑在流片时"烧死"进硅片、无法后期更改的芯片。相对FPGA单位算力功耗与成本更低、性能上限更高，代价是前期设计与流片投入（NRE）高、周期长。本报告中"定制AI芯片"（TPU、Trainium、Maia等）在架构本质上都是ASIC，只是应用场景从早期（1985–2003年）的电信交换、消费电子换成了AI推理/训练。</td></tr>
+      <tr><td>结构化ASIC<br>Structured ASIC</td><td>Structured ASIC</td><td>ASIC的折中形态：预制部分金属层/晶体管阵列，只需客制化最后1–2层布线即可完成设计，流片成本与周期介于FPGA和标准单元ASIC之间。2003年电信泡沫破裂后，结构化ASIC因跟不上台积电先进制程的迭代节奏而被边缘化——这段历史是本报告§9d论证"这一次制程节奏错配是可控的"时的重要反例参照。</td></tr>
+      <tr><td>FPGA</td><td>Field-Programmable Gate Array · 现场可编程门阵列</td><td>由大量可编程逻辑单元（LUT）、可编程互连和I/O构成，出厂后可反复烧录改写逻辑功能，无需重新流片。本报告窗口一（1985–1995）即"FPGA奠基年代"——Xilinx、Altera确立了用可编程硬件替代部分定制ASIC的商业模式。开发周期短、风险低，但单位算力的成本与功耗显著高于ASIC。</td></tr>
+      <tr><td>PLD</td><td>Programmable Logic Device · 可编程逻辑器件</td><td>FPGA的上位概念，泛指所有可通过编程配置逻辑功能的芯片，包括早期的PROM、PLA、PAL、GAL，以及后来的CPLD和FPGA。PLD先于FPGA出现（1970年代末的PROM/PAL），FPGA是这个家族里集成度最高、最主流的一支——本报告"1985年FPGA奠基"是PLD谱系里的一个里程碑，而非起点。</td></tr>
+      <tr><td>CPLD</td><td>Complex Programmable Logic Device · 复杂可编程逻辑器件</td><td>规模、复杂度介于简单PLD和FPGA之间，逻辑延迟可预测、掉电后配置不丢失（非易失），常用于胶合逻辑（glue logic）和简单状态机，不是本报告聚焦的AI计算场景的主力器件——列出主要为完整PLD谱系。</td></tr>
+      <tr><td>GPU</td><td>Graphics Processing Unit · 图形处理器</td><td>最初为图形渲染设计的大规模并行处理器，SIMD（单指令多数据）架构天然适配矩阵乘法，成为深度学习训练与推理的事实标准硬件（以NVIDIA为代表）。本报告中"GPU阵营"特指NVIDIA及其生态，与"ASIC阵营"（云厂商自研XPU）构成S10争论的两极。</td></tr>
+      <tr><td>TPU</td><td>Tensor Processing Unit · 张量处理器</td><td>Google自2015年起自研的AI专用ASIC，为矩阵（张量）运算定制，是本报告§6"第一波自研浪潮"的旗舰案例——已迭代八代，跨越CNN、RNN、Transformer三次范式转变（详见§6完整记录）。</td></tr>
+      <tr><td>XPU</td><td>行业通用叫法，无单一全称</td><td>本报告对"非GPU的定制AI加速芯片"的统称，涵盖TPU、Trainium、Maia、MTIA等各云厂商自研ASIC，与"GPU"相对使用。业内有时也用XPU泛指CPU/GPU/TPU/DPU等各类处理单元的合集，本报告采用更窄的行业口径：专指云厂商自研AI计算芯片。</td></tr>
+      <tr><td>SoC</td><td>System on Chip · 片上系统</td><td>将处理器核心、内存控制器、I/O接口等多个功能模块集成在同一颗芯片上的设计范式。本报告提及"手机SoC"（联发科）时指这类高度集成的单芯片方案，区别于数据中心里CPU、GPU/XPU、内存分立封装的架构。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>制造与先进封装</h3>
+  <table class="data">
+    <thead><tr><th>术语</th><th>全称 / 中文</th><th>释义</th></tr></thead>
+    <tbody>
+      <tr><td>制程<br>Process Node</td><td>工艺节点</td><td>通常以纳米（nm）标注的晶体管特征尺寸世代（如3nm、5nm）。制程越先进，同面积可容纳的晶体管数越多、能效通常越高。本报告§9d论证"定制ASIC制程节奏紧跟商用GPU"时，制程世代是核心度量单位。</td></tr>
+      <tr><td>流片<br>Tape-out</td><td>Tape-out</td><td>芯片设计定案后，将版图文件（GDSII）交付晶圆代工厂制作光罩并投产的节点，是芯片研发中投入最大、最不可逆的一步（光罩费用可达千万美元级）。本报告§8引用世芯电子"两次流片延迟"即指这一节点的进度滞后。</td></tr>
+      <tr><td>晶圆代工<br>Foundry</td><td>Foundry</td><td>专注代工生产、不设计自有品牌芯片的制造模式，以台积电（TSMC）为代表，与三星、英特尔等IDM（垂直整合制造商）相对。本报告中CoWoS产能瓶颈即台积电作为主要先进封装供应商的产能约束。</td></tr>
+      <tr><td>CoWoS</td><td>Chip-on-Wafer-on-Substrate</td><td>台积电的2.5D先进封装技术：将逻辑芯粒（GPU/XPU裸片）与HBM堆叠通过硅中介层（interposer）共同封装在基板上，是把算力裸片与高带宽内存物理连接起来的关键工艺。本报告§9e称其为"供给刚性排序"中的第三道闸门，2023年底约1.45万片/月产能曾是行业硬约束。</td></tr>
+      <tr><td>HBM / HBM2 / HBM3 / HBM4 / HBM4E</td><td>High Bandwidth Memory · 高带宽内存</td><td>将多层DRAM芯片垂直堆叠（用TSV硅通孔互连）并通过CoWoS等封装贴近计算芯片，以极短互连距离换取远高于传统内存的带宽，是AI芯片算力能否发挥的关键瓶颈之一。数字后缀代表代际，"E"（如HBM4E）代表增强版（Enhanced）。本报告§9e称HBM为供给刚性排序中最紧的一环（"HBM > 先进制程 > CoWoS > 光互连"）。</td></tr>
+      <tr><td>Hi（堆叠层数）</td><td>例：12-Hi</td><td>单颗HBM内部堆叠的DRAM裸片层数，如"12-Hi"即12层堆叠。层数越高，同封装面积下容量越大，但良率与散热难度也随之上升。本报告§9e"HBM：从配角到DRAM营收的五分之二"图表即按世代堆叠层数呈现。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>设计服务与商业模式</h3>
+  <table class="data">
+    <thead><tr><th>术语</th><th>全称 / 中文</th><th>释义</th></tr></thead>
+    <tbody>
+      <tr><td>NRE</td><td>Non-Recurring Engineering · 一次性工程费用</td><td>芯片设计过程中与产量无关的一次性成本（架构设计、验证、流片光罩费等），与按芯片数量计费的"量产"相对，是设计服务公司（世芯电子、GUC）的核心利润来源之一——本报告称"NRE是利润引擎，量产是营收引擎"。</td></tr>
+      <tr><td>COT</td><td>Customer-Owned Tooling · 客户自带工具/IP</td><td>一种设计服务合作模式：客户提供架构设计与核心IP，设计服务公司负责物理实现（后端设计、验证、流片对接），与设计公司自主拥有IP、按方案销售的模式相对。本报告§11指出联发科与GUC的AI业务均采用COT模式。</td></tr>
+      <tr><td>设计服务<br>Design House</td><td>Design House / Design Service Company</td><td>介于IC设计公司与晶圆代工厂之间的第三方角色，为客户提供从架构验证到流片量产的全链条或部分环节服务，本报告§11覆盖的GUC、世芯电子、芯原股份均属此类。</td></tr>
+      <tr><td>SiPaaS</td><td>Silicon Platform as a Service · 芯片平台即服务</td><td>芯原股份提出的商业模式，将IP授权与设计服务打包为标准化"芯片platform"提供给客户。本报告§11提及其IP授权环节2025年上半年毛利率达92.7%，是双引擎中的利润基础。</td></tr>
+      <tr><td>IP核 / IP授权</td><td>IP Core / IP Licensing</td><td>预先设计、验证完成、可被授权给第三方复用的电路模块（如CPU核心、接口协议）。芯片设计公司通过License（授权费）+ Royalty（版税）方式对外销售，是Arm、芯原股份等公司的核心商业模式之一。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>互连与系统架构</h3>
+  <table class="data">
+    <thead><tr><th>术语</th><th>全称 / 中文</th><th>释义</th></tr></thead>
+    <tbody>
+      <tr><td>NVLink / NVLink Fusion</td><td>NVIDIA高速芯片间互连协议</td><td>用于GPU之间及GPU与其他计算单元间的高带宽通信，带宽显著高于传统PCIe。"NVLink Fusion"是2025年5月NVIDIA开放给第三方XPU厂商接入的版本。本报告§11强调生态系统认证不等于设计中标，其定价与接入率截至发稿仍未披露。</td></tr>
+      <tr><td>MGX</td><td>NVIDIA模块化服务器/机架参考设计</td><td>允许合作伙伴以标准化模块组装AI服务器的参考架构。本报告提及AWS Trainium4的公开路线图将采用MGX与NVLink 6。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>财务与运营指标（本报告用法）</h3>
+  <table class="data">
+    <thead><tr><th>术语</th><th>全称 / 中文</th><th>释义</th></tr></thead>
+    <tbody>
+      <tr><td>Capex</td><td>Capital Expenditure · 资本开支</td><td>用于购置或升级固定资产（数据中心、服务器、土地建筑）的现金支出，计入现金流量表"投资活动"项，与计入利润表的运营费用（OpEx）相对。本报告§8"逐公司资本开支"图表即按此口径统计四大云厂商的AI基础设施投入。</td></tr>
+      <tr><td>OCF</td><td>Operating Cash Flow · 经营活动现金流量净额</td><td>企业主营业务实际收到的现金，是判断"资本开支能否靠自身造血覆盖"的分母。本报告"融资仪表盘"以capex÷OCF衡量这一点——比值超过1.0（图中红色标记）意味着当期资本开支已超过经营现金流入，需依赖外部融资或消耗现金储备。</td></tr>
+      <tr><td>TTM</td><td>Trailing Twelve Months · 滚动十二个月</td><td>以最近披露的四个季度数据加总（而非自然年/财年）计算的指标，弥补企业财年切点不一致（如微软6月结息、其余云厂商日历年结息）带来的可比性问题。本报告融资仪表盘的最后一个数据点即为TTM口径，截至最近一次已披露季度末。</td></tr>
+      <tr><td>ASP</td><td>Average Selling Price · 平均售价</td><td>本报告"单GW经济性"图表中的"RACK ASP"即指单个AI服务器机架的平均售价。</td></tr>
+    </tbody>
+  </table>
+  <p class="footnote">释义为通用行业定义，结合本报告实际语境撰写；如与具体公司披露口径有出入，以公司披露为准。</p>
+</div>
+</section>
+
 <footer>INFERENCE SILICON · 1985–2026 · 仅供参考，非投资建议<br>报告由 Claude（Anthropic）协助生成</footer>
 
 <script>
@@ -864,12 +948,39 @@ const GREEN='#5F8C63', GREENSOFT='#DEE9DD';
 const GREY='#9A9484', GREYSOFT='#EAE6DA';
 const PAPER='#FBF9F4', LINE='#E2DBC5';
 
+/* generic tiny SVG chart tooltip (shared singleton, no external deps) */
+const TIP = (function(){
+  const box = document.createElement('div');
+  box.className = 'svg-tip';
+  document.body.appendChild(box);
+  return {
+    show(html, evt){ box.innerHTML = html; box.classList.add('show'); this.move(evt); },
+    move(evt){
+      const pad = 16;
+      let x = evt.clientX + pad, y = evt.clientY + pad;
+      const r = box.getBoundingClientRect();
+      if(x + r.width > window.innerWidth - 8) x = evt.clientX - r.width - pad;
+      if(y + r.height > window.innerHeight - 8) y = evt.clientY - r.height - pad;
+      box.style.left = x + 'px'; box.style.top = y + 'px';
+    },
+    hide(){ box.classList.remove('show'); }
+  };
+})();
+function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
+function bindTooltips(el){
+  el.querySelectorAll('[data-tt]').forEach(node=>{
+    node.addEventListener('mouseenter', e=>TIP.show(node.dataset.tt, e));
+    node.addEventListener('mousemove', e=>TIP.move(e));
+    node.addEventListener('mouseleave', ()=>TIP.hide());
+  });
+}
+
 /* generic tiny SVG chart helpers (no external deps) */
 function svgBarChart(elId, labels, series, opts){
   opts = opts||{};
   const el = document.getElementById(elId);
   const W = opts.width||880, H = opts.height||260;
-  const padL=40, padR=10, padT=16, padB=28;
+  const padL=40, padR=10, padT=opts.unit?30:16, padB=28;
   const plotW = W-padL-padR, plotH = H-padT-padB;
   const stacked = !!opts.stacked;
   let maxV;
@@ -884,6 +995,9 @@ function svgBarChart(elId, labels, series, opts){
   let bars='', axis='';
   axis += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="${LINE}"/>`;
   axis += `<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="${LINE}"/>`;
+  if(opts.unit){
+    axis += `<text x="${padL}" y="${padT-11}" font-size="10" fill="${INKFAINT}" font-family="SFMono-Regular,monospace">${opts.unit}</text>`;
+  }
   [0,0.5,1].forEach(f=>{
     const yy = H-padB-f*plotH;
     axis += `<line x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}" stroke="#EDE6D4"/>`;
@@ -898,7 +1012,10 @@ function svgBarChart(elId, labels, series, opts){
         const v=se.data[i];
         const y0 = H-padB-(acc/maxV)*plotH;
         const y1 = H-padB-((acc+v)/maxV)*plotH;
-        bars += `<rect x="${(gx+groupW/2-barW/2).toFixed(1)}" y="${y1.toFixed(1)}" width="${barW.toFixed(1)}" height="${(y0-y1).toFixed(1)}" fill="${se.color}"/>`;
+        const valStr = se.fmt ? se.fmt(v) : v;
+        const note = (se.notes && se.notes[i]) ? `<br><i>${se.notes[i]}</i>` : '';
+        const tt = escAttr(`<b>${se.label}</b> · ${lab}<br>${valStr}${note}`);
+        bars += `<rect data-tt="${tt}" x="${(gx+groupW/2-barW/2).toFixed(1)}" y="${y1.toFixed(1)}" width="${barW.toFixed(1)}" height="${(y0-y1).toFixed(1)}" fill="${se.color}"/>`;
         acc+=v;
       });
     } else {
@@ -906,7 +1023,10 @@ function svgBarChart(elId, labels, series, opts){
         const v=se.data[i];
         const bx = gx + groupW*0.14 + si*barW;
         const yv = H-padB-(v/maxV)*plotH;
-        bars += `<rect x="${bx.toFixed(1)}" y="${yv.toFixed(1)}" width="${(barW*0.85).toFixed(1)}" height="${(H-padB-yv).toFixed(1)}" fill="${se.color}" rx="2"/>`;
+        const valStr = se.fmt ? se.fmt(v) : v;
+        const note = (se.notes && se.notes[i]) ? `<br><i>${se.notes[i]}</i>` : '';
+        const tt = escAttr(`<b>${se.label}</b> · ${lab}<br>${valStr}${note}`);
+        bars += `<rect data-tt="${tt}" x="${bx.toFixed(1)}" y="${yv.toFixed(1)}" width="${(barW*0.85).toFixed(1)}" height="${(H-padB-yv).toFixed(1)}" fill="${se.color}" rx="2"/>`;
         if(opts.showValues) bars += `<text x="${(bx+barW*0.4).toFixed(1)}" y="${(yv-5).toFixed(1)}" text-anchor="middle" font-size="10.5" fill="${INK}" font-weight="700">${v}</text>`;
       });
     }
@@ -923,13 +1043,14 @@ function svgBarChart(elId, labels, series, opts){
       series.map(se=>`<span style="display:inline-flex; align-items:center; gap:5px;"><i style="width:10px;height:10px;border-radius:2px;background:${se.color};display:inline-block;"></i>${se.label}</span>`).join('') + `</div>`;
   }
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}">${shade}${axis}${bars}</svg>${legend}`;
+  bindTooltips(el);
 }
 
 function svgLineChart(elId, labels, series, opts){
   opts = opts||{};
   const el = document.getElementById(elId);
   const W = opts.width||880, H = opts.height||220;
-  const padL=44, padR=14, padT=16, padB=28;
+  const padL=44, padR=14, padT=opts.unit?30:16, padB=28;
   const plotW = W-padL-padR, plotH = H-padT-padB;
   const log = !!opts.log;
   let allVals = series.flatMap(se=>se.data);
@@ -945,9 +1066,17 @@ function svgLineChart(elId, labels, series, opts){
   function xFor(i){ return padL + (labels.length>1? i/(labels.length-1)*plotW : plotW/2); }
   let axis = `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="${LINE}"/>`;
   axis += `<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="${LINE}"/>`;
+  if(opts.unit){
+    axis += `<text x="${padL}" y="${padT-11}" font-size="10" fill="${INKFAINT}" font-family="SFMono-Regular,monospace">${opts.unit}</text>`;
+  }
   labels.forEach((lab,i)=>{
     axis += `<text x="${xFor(i)}" y="${H-padB+16}" text-anchor="middle" font-size="10.5" fill="${INKFAINT}" font-family="SFMono-Regular,monospace">${lab}</text>`;
   });
+  if(opts.redAbove!=null){
+    const ry = yFor(opts.redAbove);
+    axis += `<line x1="${padL}" y1="${ry.toFixed(1)}" x2="${W-padR}" y2="${ry.toFixed(1)}" stroke="${RED}" stroke-width="1" stroke-dasharray="3,3" opacity="0.55"/>`;
+    axis += `<text x="${W-padR}" y="${(ry-4).toFixed(1)}" text-anchor="end" font-size="9.5" fill="${RED}" font-family="SFMono-Regular,monospace" opacity="0.8">${opts.redAbove.toFixed(1)}×</text>`;
+  }
   if(opts.bands){
     opts.bands.forEach(b=>{
       const i0=labels.indexOf(b.from), i1=labels.indexOf(b.to);
@@ -963,8 +1092,13 @@ function svgLineChart(elId, labels, series, opts){
     lines += `<path d="${d}" fill="none" stroke="${se.color}" stroke-width="2.2" ${se.dash?`stroke-dasharray="${se.dash}"`:''}/>`;
     if(se.points!==false){
       se.data.forEach((v,i)=>{
-        lines += `<circle cx="${xFor(i).toFixed(1)}" cy="${yFor(v).toFixed(1)}" r="4.5" fill="${se.color}"/>`;
-        if(opts.showValues) lines += `<text x="${xFor(i).toFixed(1)}" y="${(yFor(v)-10).toFixed(1)}" text-anchor="middle" font-size="10.5" fill="${INK}" font-weight="700">${se.fmt?se.fmt(v):v}</text>`;
+        const valStr = se.fmt?se.fmt(v):v;
+        const over = opts.redAbove!=null && v>opts.redAbove;
+        const note = (se.notes && se.notes[i]) ? `<br><i>${se.notes[i]}</i>` : (over?`<br><i>高于${opts.redAbove}——资本开支超过经营现金流</i>`:'');
+        const tt = escAttr(`<b>${se.label}</b> · ${labels[i]}<br>${valStr}${note}`);
+        const fill = over ? RED : se.color;
+        lines += `<circle data-tt="${tt}" cx="${xFor(i).toFixed(1)}" cy="${yFor(v).toFixed(1)}" r="${over?5.5:4.5}" fill="${fill}"${over?` stroke="${PAPER}" stroke-width="1.5"`:''}/>`;
+        if(opts.showValues) lines += `<text x="${xFor(i).toFixed(1)}" y="${(yFor(v)-10).toFixed(1)}" text-anchor="middle" font-size="10.5" fill="${INK}" font-weight="700">${valStr}</text>`;
       });
     }
   });
@@ -974,6 +1108,7 @@ function svgLineChart(elId, labels, series, opts){
       series.map(se=>`<span style="display:inline-flex; align-items:center; gap:5px;"><i style="width:14px;height:2px;background:${se.color};display:inline-block;"></i>${se.label}</span>`).join('') + `</div>`;
   }
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}">${axis}${lines}</svg>${legend}`;
+  bindTooltips(el);
 }
 
 /* ============ Hero timeline ============ */
@@ -1600,28 +1735,52 @@ svgBarChart('chartGUC',
 );
 
 /* ============ Capex by company ============ */
+/* Verified against SEC EDGAR XBRL company-facts (10-K/10-Q), fetched 2026-07-30
+   via this project's ingest/sec_financials.py (fixed AMZN capex tag mismatch
+   in the same pass — see ingest/sec_financials.py comment). FY2023-2025 are
+   filed actuals for all four; MSFT's FY2026 (year ended 2026-06-30) is also a
+   filed actual since MSFT's 10-K was already available as of this fetch date.
+   AMZN/GOOGL/META run calendar fiscal years, so their FY2026 is not yet closed
+   and stays a guidance/analyst estimate — not SEC-verifiable yet. */
+/* 2026 column updated 2026-07-30 with each company's own guidance as of their
+   most recent quarterly call (bar height = midpoint of the latest guided
+   range where a range was given). Progression + primary source in each note. */
+const AMZN_2026_NOTE = '指引未变：$200B（2026-02-05 Q4’25电话会给出，2026-04-29 Q1’26电话会重申，未上调）。Q2’26财报定于2026-07-30盘后发布——尚未公布，本次未采用市场对上调至约$210B的预测（BofA）。';
+const MSFT_2026_NOTE = '实际值（已核实）— FY2026于2026-06-30结束，10-K已提交SEC。同日（2026-07-29）财报电话会另给出FY2027（截至2027-06-30）资本开支指引约$175B（含融资租赁）；CFO称因数据中心/办公楼折旧年限由15年延长至25年、更多未来租赁计入经营租赁而非融资租赁，2026自然年内部投资预期本身未变。';
+const GOOGL_2026_NOTE = '指引三次上调：$175–185B（2026-02-04 Q4’25电话会）→ $180–190B（2026-04-29 Q1’26电话会）→ $195–205B（2026-07-22 Q2’26电话会，最新）。柱高取最新区间中值$200B。Q2’26实际资本开支$44.9B，10-Q已于2026-07-23提交SEC，与本项目ingest核实一致。';
+const META_2026_NOTE = '指引两次上调：$115–135B（2026-01-28 Q4’25电话会）→ $125–145B（2026-04-29 Q1’26电话会）→ $130–145B（2026-07-29 Q2’26电话会，最新，收窄下限）。柱高取最新区间中值$137.5B。Q2’26实际资本开支$31.08B（含融资租赁）。';
 svgBarChart('chartCapex',
   ['FY2023','FY2024','FY2025','2026E'],
   [
-    {label:'亚马逊', data:[48,77,125,200], color:BLUE},
-    {label:'微软', data:[32,44,64,100], color:ACCENT},
-    {label:'Google', data:[32,52,91,175], color:GOLD},
-    {label:'Meta', data:[28,39,72,115], color:GREEN}
+    {label:'亚马逊', data:[57.1,85.0,133.4,200], color:BLUE,
+     fmt:v=>'$'+v+'B', notes:[null,null,null,AMZN_2026_NOTE]},
+    {label:'微软', data:[28.1,44.5,64.6,115.9], color:ACCENT,
+     fmt:v=>'$'+v+'B', notes:[null,null,null,MSFT_2026_NOTE]},
+    {label:'Google', data:[32.3,52.5,91.4,200], color:GOLD,
+     fmt:v=>'$'+v+'B', notes:[null,null,null,GOOGL_2026_NOTE]},
+    {label:'Meta', data:[28.1,39.2,72.2,137.5], color:GREEN,
+     fmt:v=>'$'+v+'B', notes:[null,null,null,META_2026_NOTE]}
   ],
-  {stacked:true, height:260}
+  {stacked:true, height:260, unit:'十亿美元 US$B'}
 );
 
 /* ============ Capex/OCF ratio ============ */
+/* Same source/date as chartCapex above. FY ratio = that fiscal year's filed
+   capex ÷ filed operating cash flow. TTM = trailing four filed quarters ending
+   nearest 2026-03-31 (derived as FY2025 + Q1'26 − Q1'25 from 10-Q cumulative
+   facts). AMZN and Meta use "capex + finance-lease principal payments" to
+   match their own reported total-capex convention (see chart subtitle); MSFT
+   and Google use cash capex only (matches how their own IR figures round). */
 svgLineChart('chartCapexRatio',
   ['FY2023','FY2024','FY2025','TTM(2026Q1)'],
   [
-    {label:'亚马逊', data:[0.55,0.68,0.9,1.02], color:BLUE},
-    {label:'微软', data:[0.45,0.5,0.6,0.63], color:ACCENT},
-    {label:'Google', data:[0.4,0.48,0.58,0.62], color:GOLD},
-    {label:'Meta', data:[0.38,0.45,0.55,0.6], color:GREEN},
-    {label:'合计（前四大）', data:[0.41,0.5,0.62,0.71], color:INK, dash:'6,4', points:false}
+    {label:'亚马逊', data:[0.67,0.73,0.96,1.03], color:BLUE, fmt:v=>v.toFixed(2)+'×'},
+    {label:'微软', data:[0.32,0.38,0.47,0.57], color:ACCENT, fmt:v=>v.toFixed(2)+'×'},
+    {label:'Google', data:[0.32,0.42,0.56,0.63], color:GOLD, fmt:v=>v.toFixed(2)+'×'},
+    {label:'Meta', data:[0.40,0.43,0.62,0.63], color:GREEN, fmt:v=>v.toFixed(2)+'×'},
+    {label:'合计（前四大）', data:[0.42,0.49,0.65,0.71], color:INK, dash:'6,4', points:false, fmt:v=>v.toFixed(2)+'×'}
   ],
-  {min:0, max:1.15, height:220}
+  {min:0, max:1.15, height:220, unit:'比率 capex÷OCF', redAbove:1.0}
 );
 
 /* ============ Crossover ============ */
