@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>半导体终局四篇核查</title>
+<style>
+:root{--bg:#fcfcfb;--panel:#fff;--line:#e3e2dd;--tx1:#0b0b0b;--tx2:#52514e;--tx3:#7b7a75;--grid:#eeedea;--acc:#2a78d6;--good:#0f7a4d;--warn:#8a5a00;--bad:#b3261e;--gray:#5f5e5a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1a1a19;--panel:#232322;--line:#3a3a37;--tx1:#f0efec;--tx2:#c3c2b7;--tx3:#94938b;--grid:#2e2e2c;--acc:#3987e5;--good:#4bbd85;--warn:#e0a63a;--bad:#e66767;--gray:#b4b2a9}}
+:root[data-theme="dark"]{--bg:#1a1a19;--panel:#232322;--line:#3a3a37;--tx1:#f0efec;--tx2:#c3c2b7;--tx3:#94938b;--grid:#2e2e2c;--acc:#3987e5;--good:#4bbd85;--warn:#e0a63a;--bad:#e66767;--gray:#b4b2a9}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx1);font:16px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif}
+.wrap{max-width:920px;margin:0 auto;padding:32px 16px 96px}
+h1{font-size:28px;line-height:1.35;margin:0 0 6px}
+h2{font-size:22px;margin:52px 0 6px;padding-top:18px;border-top:1px solid var(--line)}
+h3{font-size:17px;margin:28px 0 8px}
+p{margin:10px 0}
+.upd{font-size:14px;color:var(--tx2);background:var(--grid);border-radius:8px;padding:10px 14px;margin:10px 0 26px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin:16px 0}
+.box ol,.box ul{margin:6px 0;padding-left:22px}
+.tw{overflow-x:auto;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:640px}
+th,td{text-align:left;vertical-align:top;padding:8px 9px;border-bottom:1px solid var(--line)}
+thead th{color:var(--tx2);font-weight:600;font-size:12.5px;border-bottom:1.5px solid var(--line)}
+td:nth-child(2){white-space:nowrap;font-weight:600}
+.ok{color:var(--good)}.mid{color:var(--warn)}.no{color:var(--bad)}.na{color:var(--gray)}
+.legend{font-size:13px;color:var(--tx2)}
+.legend span{margin-right:14px;white-space:nowrap}
+small,.muted{color:var(--tx3);font-size:13px}
+a{color:var(--acc)}
+code{font-family:ui-monospace,Menlo,monospace;font-size:.88em;background:var(--grid);padding:1px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>半导体终局四篇：数据、推断与结论核查</h1>
+<div class="upd">2026-10-22 首版：核查《AI 半导体终局推演 2026》I（4/29）、II（6/25）、III（8/29）、IV（10/21）四篇的数据、推断和主要结论，并对照项目已有的 SPCX、AI Capex ROI、CBRS 研究。</div>
+
+<p class="legend">标记：<span class="ok">✅ 有独立来源或算术成立</span><span class="mid">🟡 说得通，但只有二手来源 / 口径不一 / 部分成立</span><span class="no">❌ 错误或不成立</span><span class="na">🔴 无法核实（作者估计或无公开数据）</span></p>
+
+<h2 id="sum">一页结论</h2>
+<div class="box">
+<ol>
+<li><b>能查到的硬数据，大部分对得上。</b>Anthropic / OpenAI 的 ARR 走势、Codex 占企业输出 token 64%、Fireworks $10 亿 ARR、Bernstein 2030 CPU TAM $2,230 亿、NVIDIA 收购 Hugging Face、Anthropic 的 GW 规划、neocloud 短约 $40–50B/GW，都有来源。</li>
+<li><b>最站得住的是第 II 篇的存储供给侧逻辑。</b>HBM 吃掉 DRAM 晶圆，DRAM 密度提升放缓到个位数，HBM 每 GPU 容量年增约 44%。最弱的是从 CPU TAM 推 DRAM 需求那一段：TAM、每核价格、每核 GB 三个输入都是作者假设，乘在一起。</li>
+<li><b>第 I 篇的公式是口诀，不是第一性原理。</b>容量和带宽都重要，方向对。但吞吐不是两者的乘积：满载时吞吐约等于"带宽 ÷ 每 token 要读的 KV 字节"，容量是边际递减。"软件优化与 HBM 需求无关"也不成立，KV 压缩直接减少每个用户占的 HBM。</li>
+<li><b>第 III、IV 篇的单位经济有三处硬伤。</b>
+  <ul>
+  <li>"ROIC 60%"其实是收入 ÷ 投入资本。</li>
+  <li>用 Anthropic 一家的 $31B/GW 去推两家合计。两家混合只有约 $17B/GW，OpenAI 约 $10B/GW。</li>
+  <li>"收入是硬件摊销的 10 倍"是硬件持有者在短缺期的差价。O 和 A 主要是租算力，按现货价租，自己的利润要薄得多。文章只引了短约高端价 $40–50B/GW；同一张 UBS 图里，长约是 $10–25B/GW。</li>
+  </ul></li>
+<li><b>作者的估计和有来源的数据混在一起，没有分开标注。</b>推理占比 ⅔→40%、旗舰 $80B/GW、2031 CPU TAM $4,000 亿、长鑫密度折半、HBM4 4 倍晶圆、NAND 是 DRAM 的 1/40，这些都是作者的数字。</li>
+<li><b>跨篇有几处自相矛盾。</b>Anthropic 6–7 月 ARR 有三个版本。第 IV 篇的"每代吞吐翻倍、单价减半"和"6 年摊销、每 GW 收入不变"不能同时成立，除非短缺持续 6 年。</li>
+</ol>
+</div>
+
+<h2 id="p1">第 I 篇（4/29）：token 吞吐 = HBM 容量 × HBM 带宽</h2>
+<h3>主要结论</h3>
+<p>推理时代的最高 KPI 从 FLOPS 变成"单位成本 / 单位电力下的 token 吞吐"。吞吐 = 并发数（batch）× 单用户速度：并发数受 HBM 容量限制（每个请求的 KV cache 要放在 HBM 里），单用户速度受 HBM 带宽限制（每生成一个 token 都要读一遍权重和 KV）。所以 GPU 每代要让吞吐翻倍，HBM 容量 × 带宽就得代代翻倍。这是供给侧的内生压力，与宏观周期无关。</p>
+<div class="tw"><table>
+<thead><tr><th>说法</th><th>判定</th><th>依据</th></tr></thead>
+<tbody>
+<tr><td>吞吐 = HBM 容量 × HBM 带宽</td><td class="mid">🟡 方向对，公式不成立</td><td>两者都卡吞吐，这一点对。但公式不对：给定单用户速度目标 s，并发上限同时受两条约束，一条是容量（(容量−权重) ÷ 每用户 KV），一条是带宽（每步要在 1/s 秒内读完权重和全部 KV）。吞吐取两者中较小的那个，不是相乘。满载时吞吐 ≈ 带宽 ÷ 每 token KV 字节 × (1 − 权重/容量)：带宽线性，容量边际递减。单位上 GB × TB/s 也不是 tokens/s。</td></tr>
+<tr><td>图二：A100→Rubin，吞吐指数与容量×带宽指数在对数轴上走势一致</td><td class="mid">🟡</td><td>容量×带宽数值我复算一致（A100=1：H100 1.7、H200 4.2、B200 9.6、Rubin 40、Rubin Ultra 200）。但只有 5 个点，同期 FP8→FP4 精度、NVLink 规模、FLOPS 也都在指数增长，这张图分不出谁在驱动。Rubin 处两条线已经分叉（吞吐 20 vs 容量×带宽 40）。</td></tr>
+<tr><td>Rubin NVL72：1,920 请求 × 100 tok/s = 19.2 万 tok/s；120 kW → 1.6M tok/s/MW</td><td class="mid">🟡</td><td>算术对。120 kW 是 GB200 NVL72 的量级，Rubin 机柜功率未核实。</td></tr>
+<tr><td>软件优化和 HBM 需求是两个独立维度</td><td class="no">❌</td><td>GQA（KV 头 64→8，KV 小 8 倍）、FP8 KV（小 2 倍）、MLA 都直接减少每个用户占的 HBM。用量增长能不能把它吃回来是另一个问题，但两者不独立。第 IV 篇自己也把"KV cache 压缩让价格每半年减半"当作核心论据。</td></tr>
+<tr><td>HBM 必须代代翻倍是 NVIDIA 路线图的压力</td><td class="ok">✅</td><td>公开路线图：H100 80 GB → B200 192 GB → Rubin 288 GB → Rubin Ultra 1 TB。</td></tr>
+<tr><td>DDR3 到 DDR5 用了约 15 年</td><td class="ok">✅</td><td>约 13–14 年（2007 → 2020/21）。</td></tr>
+<tr><td>PC 平均 DRAM 十年从 7–8 GB 到 23 GB；DDR 速度翻倍 CPU 性能只提升 &lt;20%</td><td class="na">🔴</td><td>经验说法，没有找到来源。</td></tr>
+</tbody></table></div>
+<p><b>评价：</b>结论"HBM 需求随推理吞吐指数增长"站得住，因为 decode 确实受内存限制，KV cache 确实随并发和上下文线性增长。需要打折的是"与软件无关"：KV 压缩、稀疏注意力每推进一步，单位吞吐需要的 HBM 就少一截。HBM 需求最终是"用量增长 ÷ 软件压缩"的净值，不是纯粹由硬件路线图决定。</p>
+
+<h2 id="p2">第 II 篇（6/25）：HBM、DRAM、NAND 能不能摆脱周期</h2>
+<h3>主要结论</h3>
+<p>摆脱周期有三个条件：定制化长约、结构性指数需求、技术快速迭代。HBM 满足两条半，从"周期"变成"成长周期"，即下行期少赚而不是亏损。DRAM 因为 agentic CPU 带来新的结构性需求（服务器 CPU TAM 5–7 倍 × 每核 DRAM 3–4 倍），加上密度提升放缓、HBM 抽走晶圆，至少五年难进周期低谷。长鑫扩产对行业产能增速的影响只有约 1.5 个百分点。NAND 靠 KV offload、AI 视频、沙箱，超级周期可能持续到 2030 年。</p>
+<div class="tw"><table>
+<thead><tr><th>说法</th><th>判定</th><th>依据</th></tr></thead>
+<tbody>
+<tr><td>每 GPU 的 HBM 容量年增 40% 以上</td><td class="ok">✅</td><td>80 GB（2020）→ 1 TB（2027），年化约 44%。</td></tr>
+<tr><td>GPU HBM 带宽 2 → 3.35 → 4.8 → 8 → 22 TB/s</td><td class="ok">✅</td><td>与 NVIDIA 公开规格一致；Rubin 22 TB/s 是厂商口径。</td></tr>
+<tr><td>DRAM bit 供给年增 24% = 晶圆 14% × 密度 9%；扣掉 HBM 后，普通 DDR 约 20%</td><td class="mid">🟡</td><td>算术对：1.14 × 1.09 = 1.24；1.10 × 1.09 = 1.20。三个输入是作者估计。</td></tr>
+<tr><td>HBM3E 要 3 倍 DRAM 晶圆，HBM4 要 4 倍</td><td class="mid">🟡</td><td>业内普遍用 3:1（Utmel、DS 投资证券）。4 倍没找到第三方来源。TrendForce：HBM 占三大厂 DRAM 晶圆投片 2025/26/27 年约 18% / 22% / 30%。</td></tr>
+<tr><td>三星 HBM3E 在 NVIDIA 份额 60%→20%，产能转供 Google TPU 和 AMD</td><td class="mid">🟡</td><td>方向与公开报道一致，具体百分比未核实。</td></tr>
+<tr><td>CPU TAM 2030：AMD $600 亿→$1,200 亿，NVIDIA $2,000 亿，Bernstein $2,230 亿</td><td class="ok">✅ 大体</td><td>Bernstein 6/17 报告：$370 亿（2025）→ $2,230 亿（2030），基于 $3.5 万亿 AI capex 和推理 1:1 CPU:GPU。NVIDIA 的 $2,000 亿是 CFO 说"Vera 打开 $2,000 亿新 TAM"，是卖方自己的说法。AMD $1,200 亿有第二来源。BofA $1,700–2,100 亿，Barclays 近 $2,000 亿。</td></tr>
+<tr><td>2031 CPU TAM 上修到 $4,000 亿"没有悬念"</td><td class="na">🔴</td><td>作者预测。</td></tr>
+<tr><td>CPU:GPU 配比 1:4 → 1:2 → 1:1</td><td class="mid">🟡</td><td>Bernstein 的基准情景用的就是推理 1:1。它是同一个假设，不是独立证据。</td></tr>
+<tr><td>Agent 流程里 CPU 占 50–90% 的延迟</td><td class="na">🔴</td><td>没找到来源。</td></tr>
+<tr><td>2030 年 DRAM 新增需求 ≥96 EB，今年总产量只有 47 EB</td><td class="mid">🟡</td><td>算术对：$3,000 亿 ÷ $50/核 = 60 亿核 × 16 GB。但这要求 2030 年每年卖出 60 亿个服务器核，约是现在的 3 倍 [推断]。47 EB / 60 EB 产量未核实。</td></tr>
+<tr><td>长鑫 2025 年 20 万片/月 → 2026 年 32–35 万 → 2028 年 50 万；密度只有三大厂一半</td><td class="mid">🟡</td><td>报道：当前约 30 万片/月（另一来源 20 万），2026 年底约 35 万，和作者接近。但上海等新厂可能把产能推到 60 万+；Citrini 估 2030 年 95 万片/月。作者的 50 万是偏低的一端。</td></tr>
+<tr><td>长鑫只让行业 DRAM 产能 CAGR 从 12.7% 升到 14.2%</td><td class="mid">🟡</td><td>表格算术自洽。但结论几乎完全取决于"密度折半"和"50 万片"两个假设。表里中国 2028 年 274K 是折半后的数字，对应实际约 55 万片，和正文"50 万"不一致。</td></tr>
+<tr><td>SemiAnalysis：今年 DRAM 缺口个位数 %，明年超过 10%</td><td class="mid">🟡</td><td>其他机构差别很大：Sigmaintell 估 2026 年 −12%，DS 投资证券 −5%。</td></tr>
+<tr><td>HBM4 新签价 = 同期 DRAM 价 × 4</td><td class="na">🔴</td><td>未核实。</td></tr>
+<tr><td>NAND 2027 年 $0.8/GB，是 DRAM 的 1/40</td><td class="na">🔴</td><td>隐含 DRAM 约 $32/GB，偏高，未核实。</td></tr>
+</tbody></table></div>
+<p><b>评价：</b>HBM 部分是四篇里证据最扎实的：容量、带宽路线图、晶圆消耗、HBM 占投片比例都有公开数字。DRAM 的"结构性需求"有真实信号，多家机构在半年内把 CPU TAM 上修了 1.5–3 倍。但这些上修互相引用同一个 1:1 配比假设，而 NVIDIA、AMD 是在为自己的产品定 TAM。从 TAM 推到 DRAM 需求 EB 数，又乘了两个作者假设。长鑫是最被低估的风险：结论对"密度折半"高度敏感，第三方产能预测比作者高。</p>
+
+<h2 id="p3">第 III 篇（8/29）：基建期为什么比互联网长、capex 有没有泡沫</h2>
+<h3>主要结论</h3>
+<ul>
+<li>互联网只有用户数一个维度，AI 有用户渗透率和人均用量两条 S 曲线接力。前一条已过 50% 拐点，后一条还在早期（企业 AI 支出中位数每人每月 $12，远期可到白领工资 10%，约 $1,000）。</li>
+<li>Coding 之后接棒的仍然是"广义 coding"：Excel、PPT、法律、财务等任务在后台都被转成 coding 闭环。</li>
+<li>O+A 的单位经济算得过来，2027–28 年的算力规划没有泡沫；但因为推理太赚钱，最终一定 overbuild，只是至少两年内看不到。</li>
+<li>开源只占模型 ARR 约 3%。闭源用"旗舰 + 便宜档"防守（高通 vs 联发科类比），开源冲击不会改变大局。</li>
+</ul>
+<div class="tw"><table>
+<thead><tr><th>说法</th><th>判定</th><th>依据</th></tr></thead>
+<tbody>
+<tr><td>企业 AI 支出中位数每人每月 $12</td><td class="ok">✅</td><td>Ramp AI Index 中位 PEPM 约 $11.95（项目已核，注意是每月）。</td></tr>
+<tr><td>美国 AI 用户渗透率约 50%</td><td class="mid">🟡</td><td>引用图表的来源未核实。</td></tr>
+<tr><td>广义 coding 占 ARR 60–70%，狭义 40%；Anthropic 金融 20%+，法律、制药、零售各约 10%</td><td class="na">🔴</td><td>没有公开的分行业收入。能找到的只有 Claude Code 单产品 run-rate 超过 $25 亿。</td></tr>
+<tr><td>Codex 占企业客户 Codex+ChatGPT 输出 token 64%；法律部门增长 108 倍</td><td class="ok">✅</td><td>OpenAI 8/12 自报的 6 月数据。注意 108 倍是周活用户增长，不是 token。</td></tr>
+<tr><td>6 月底 Anthropic 用约 2 GW 做出 $62B ARR</td><td class="mid">🟡</td><td>ARR 落在官方 5/28 $47B 和 Bloomberg 7 月底 $65B 之间。但文中自己引用的 20VC 图，6 月是 $56B。2 GW 没有直接来源：2025 年底约 1.4 GW（报道）；SemiAnalysis "每 MW ARR $6,000 万"（项目 7/8 已核）对应只有约 1 GW。</td></tr>
+<tr><td>1 GW 建设成本 $50B</td><td class="ok">✅</td><td>SPCX Q2–Q3 实际 $27–46B/GW，项目模型用 $45B。</td></tr>
+<tr><td>$50B 摊到 6 年，每年约 $10B</td><td class="no">❌</td><td>6 年是 $8.3B，$10B 对应 5 年。第 IV 篇改成了 $8B。</td></tr>
+<tr><td>推理收入约 $30B/GW，是年化成本的 3 倍；推理 ROIC 约 60%</td><td class="no">❌</td><td>62% = $31B ÷ $50B，是收入 ÷ 投入资本（资产周转率），不是回报率。只扣折旧就是 (31 − 8.3) ÷ 50 ≈ 45% 税前，电费、人力、销售、训练都还没扣。公司层面：Anthropic Q3 利润超过 $10 亿（SemiAnalysis），按约 $160 亿季度收入算，利润率约 6% [推断]。"3 倍"作为毛利率口径成立：毛利率约 65% 意味着推理收入 ≈ 推理算力成本的 2.9 倍。</td></tr>
+<tr><td>只算推理，约 $50B/GW</td><td class="mid">🟡</td><td>算术对（31 ÷ ⅔ ≈ 46.5），但"推理占 ⅔"是作者估计。</td></tr>
+<tr><td>7 月 Anthropic $65B、OpenAI $45B</td><td class="mid">🟡</td><td>Anthropic ✅（Bloomberg）。OpenAI 报道约 $40B（Bloomberg、Sacra），文中图也是 $40B。同篇后文又写"7 月底 Anthropic 72–75B"，那是 20VC 图的 8 月估计值。</td></tr>
+<tr><td>两家 7 月 6–7 GW → 年底 11 GW → 2027 年底 20–24 GW → 2028 年 45 GW → 2030 年 100 GW</td><td class="mid">🟡</td><td>Anthropic 年底约 5 GW、2027 年底约 10 GW（报道）对得上；OpenAI 2025 年 1.9 GW（CFO 官方）。年底 11 GW 只需下半年每月涨 10%（1.1⁶ = 1.77），算术对。2028 年 +80% 只够约 40 GW。没写出来的终点：两家 2030 年 ARR 合计约 $1.7 万亿（按混合 $17B/GW）。</td></tr>
+<tr><td>"维持这个 unit economy 标准"推到两家</td><td class="no">❌</td><td>两家 7 月合计约 $110B ÷ 6.5 GW ≈ $17B/GW，OpenAI 单独约 $10B/GW（2025 年 $20B ÷ 1.9 GW）。对照每年 $8–10B 摊销，两家合计约 1.7–2 倍，OpenAI 约 1 倍。</td></tr>
+<tr><td>闭源推理毛利 70–85%，开源 60%+，GPU 短约 60%+</td><td class="mid">🟡</td><td>SemiAnalysis：Anthropic 约 65%、API 超过 80%（项目 7/8）。SPCX SI 段 Q3 调整后 EBITDA 利润率约 55%（项目推算）。</td></tr>
+<tr><td>1 GW 租金"往 $20B 走"</td><td class="mid">🟡</td><td>UBS 图：长约 $10–25B/GW，短约 $37–50B/GW。SPCX CFO Q3 说现货价在 $30–50/W 区间高端之上。第 IV 篇改用短约高端，见下。</td></tr>
+<tr><td>全球开源收入约 $10B，北美 $4–5B，闭源 $120B → 约 3%</td><td class="na">🔴</td><td>无法直接核实。</td></tr>
+<tr><td>Fireworks：10T+ token/日、$3 亿 ARR → 40T/日、$10 亿</td><td class="ok">✅</td><td>公司公告：2 月 $3.15 亿，7 月 $10 亿；日 token 15T → 40T+。</td></tr>
+<tr><td>中国开源：智谱 $10 亿、阿里 $12 亿、DeepSeek $5 亿、Kimi $3 亿、MiniMax $2 亿</td><td class="mid">🟡 口径混用</td><td>智谱的 $10 亿是年底目标，Q1 ARR 只有约 $2.5 亿。MiniMax 5 月已约 $3 亿。DeepSeek $4–5 亿、Kimi 约 $3 亿对得上（项目 ai_capex_roi 文件）。</td></tr>
+<tr><td>Bedrock 占 AWS AI 约 55%、约 $14B ARR，其中 Anthropic 占 80%</td><td class="mid">🟡</td><td>第三方估计 Q1 Anthropic 占 AWS AI 收入 80% 以上。Bedrock $14B 没有公开数字。</td></tr>
+<tr><td>NVIDIA "今天收购了 Hugging Face"</td><td class="ok">✅</td><td>$129 亿，报道日期是 9 月初（比文章晚几天），预计 2027 年上半年交割。</td></tr>
+<tr><td>开源与闭源差距维持约 6 个月</td><td class="na">🔴</td><td>观点。</td></tr>
+</tbody></table></div>
+<p><b>评价：</b>"两条 S 曲线接力"和"广义 coding"是有解释力的框架，Codex 的部门分布数据也支持它。但这篇的核心数字有问题：ARR 时间线前后不一致，ROIC 用错了定义，用 Anthropic 一家的 $/GW 推两家。"2027–28 无泡沫"作为方向判断可以讨论，但它依赖的单位经济比文中写的薄得多，OpenAI 那一半尤其如此。</p>
+
+<h2 id="p4">第 IV 篇（10/21）：开源会不会伤害半导体</h2>
+<h3>主要结论</h3>
+<ul>
+<li>token 经济学是动态平衡：价格下降多快，软硬件降本就多快，所以毛利率守得住。只要毛利率在，运营 GPU 的人就会继续抢 GPU。</li>
+<li>性价比档是大宗商品，高端档是 OpenAI 和 Anthropic 的双寡头。开源威胁的只是性价比档，闭源龙头靠自家蒸馏的便宜模型防守。</li>
+<li>开源占 token 20% 以上，但只占 ARR 5–10%，对半导体需求的直接影响小。它反而让 NVIDIA 的客户更分散，算利好。</li>
+<li>每 GW 账：B300 跑旗舰模型每年可产生 $80B 以上 token 收入，硬件 6 年摊销每年约 $8B，相差 10 倍。</li>
+<li>平衡的前提是用量增长跑赢降价。训练是被忽略的另一块需求。增长是楼梯式的，每次放缓都会被误认为见顶。</li>
+</ul>
+<div class="tw"><table>
+<thead><tr><th>说法</th><th>判定</th><th>依据</th></tr></thead>
+<tbody>
+<tr><td>开源占 token 20%+，但只占 ARR 5–10%；北美开源 &lt;$10B，闭源 &gt;$120B、接近 $140B</td><td class="mid">🟡</td><td>闭源合计和 Anthropic + OpenAI（FT 报 9 月约 $50B）的量级吻合；开源部分无法直接核实。</td></tr>
+<tr><td>每代硬件吞吐约翻倍；Blackwell 最高约 H100 的 4 倍</td><td class="ok">✅</td><td>与第 I 篇图一致（B200 ÷ H100 ≈ 4）。</td></tr>
+<tr><td>GPT-4 级价格每年降约 10 倍</td><td class="ok">✅</td><td>被广泛引用的"LLMflation"估计。</td></tr>
+<tr><td>B300 跑旗舰每年 $80B+/GW；Rubin $120B+</td><td class="na">🔴</td><td>是满载吞吐 × 挂牌价的理论值，没有披露。作者自己给的 Anthropic 实际混合值约 $31B/GW，约为它的 40%。</td></tr>
+<tr><td>旗舰推理毛利 75–80%+，开源 60–70%</td><td class="mid">🟡</td><td>与 SemiAnalysis 的 Anthropic 约 65%、API 80%+ 大致相符。</td></tr>
+<tr><td>硬件 6 年摊销，每年约 $8B/GW</td><td class="mid">🟡</td><td>算术对（$48B ÷ 6）。但 6 年寿命偏长：SPCX 模型按 5 年约 $9B，Burry 质疑云厂商延长折旧年限。也没算电费（约 $0.6–0.9B/GW/年）、机房和融资成本（8% × $50B ≈ $4B/年）。</td></tr>
+<tr><td>neocloud 短约每年 $40–50B/GW</td><td class="mid">🟡 只是短约高端</td><td>UBS 图：SPCX 新单 $30–50B，NBIS 短约 $40–50B，CRWV 短约 $37–43B。同一张图的长约：ORCL 约 $9–11B，CRWV 约 $10–13B，IREN 五年约 $15–20B。SPCX CFO Q3 原话：价格在 $30–50/W 区间高端之上，回本期不到一年。</td></tr>
+<tr><td>"收入是硬件摊销的 10 倍"</td><td class="no">❌ 对 O 和 A 不成立</td><td>这是硬件持有者在短缺期的差价。O 和 A 主要租算力，成本是租金：按现货 $50B/GW 租来跑混合 $31B/GW 的业务是亏的，只能拿去跑高价旗舰推理。</td></tr>
+<tr><td>token 需求短期价格弹性约 1（OpenRouter + Azure 研究）</td><td class="mid">🟡</td><td>没找到这项研究。最接近的是 NYU 一篇用 OpenRouter 周数据的论文，弹性约 −0.78。小于 1 意味着降价 10% 用量只涨约 7.8%，短期总支出下降。这对作者自己的前提（用量要跑赢降价）是不利证据。</td></tr>
+<tr><td>每步 99% 可靠，20 步整体约 82%</td><td class="ok">✅</td><td>0.99²⁰ = 0.818。</td></tr>
+<tr><td>Anthropic 2027 年约 10 GW；年底 ARR $3,000 亿时 4 GW 推理就够，剩 6 GW 训练</td><td class="mid">🟡</td><td>10 GW 有报道（约 9.5–10 GW）。$3,000 亿是假设，与 SemiAnalysis 乐观路径同源（项目 7/8 文件已标为最脆弱假设）。4 GW 够用需要每 GW $750 亿；按今年推理口径约 $465 亿/GW，需要 6.5 GW 推理，训练只剩 3.5 GW。</td></tr>
+<tr><td>上半年推理占 ⅔，明年降到 40%</td><td class="na">🔴</td><td>作者估计。</td></tr>
+<tr><td>前 1% 用户用量是中位的 100 倍；Sol 6.1 / Opus 5.5 "斩杀线"；DeepSeek Flash 4.1 利润率回到 70%+</td><td class="na">🔴</td><td>未核实。</td></tr>
+</tbody></table></div>
+<p><b>评价：</b>"动态平衡"和"两档市场"是有用的框架，开源 ARR 占比小这一点也大体可信。但这篇最大的问题是成本端：把持有者在短缺期的现货差价，当成整条链的常态利润。还有一个自身矛盾：如果每代硬件让每瓦吞吐翻倍、单价减半，旧舰队每 GW 能卖的钱就会逐代下降，"6 年摊销 + 每 GW 收入不变"只在短缺持续 6 年时才成立。Musk 说 H100 现在租得比新的时候还贵，这是短缺期的现象，不是常态。</p>
+
+<h2 id="cross">跨篇的不一致</h2>
+<div class="tw"><table>
+<thead><tr><th>位置</th><th>判定</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>Anthropic 6–7 月 ARR</td><td class="no">❌</td><td>第 III 篇正文：6 月底 $62B、7 月 $65B、"7 月底 72–75B"。同篇引用的 20VC 图：6 月 $56B、7 月 $65B、8 月估 $74B。</td></tr>
+<tr><td>OpenAI 7 月 ARR</td><td class="mid">🟡</td><td>正文 $45B，同篇图 $40B。</td></tr>
+<tr><td>每 GW 租金</td><td class="mid">🟡</td><td>第 III 篇"往 $20B 走"，第 IV 篇"短约 $400–500 亿"。不是两个月翻倍，而是长约和短约两种口径。</td></tr>
+<tr><td>软件优化</td><td class="no">❌</td><td>第 I 篇：软件与 HBM 需求无关。第 IV 篇：KV 压缩等软件优化每半年把价格砍一半。后者恰恰是减少单位吞吐所需 HBM 的机制。</td></tr>
+<tr><td>旧硬件的收入</td><td class="no">❌</td><td>第 IV 篇同时说"每代吞吐翻倍、单价减半"和"6 年摊销、每 GW 收入不变"。</td></tr>
+</tbody></table></div>
+
+<h2 id="proj">和项目已有研究的连接</h2>
+<div class="box">
+<ul>
+<li><b>SPCX</b>（<code>spacex/SPCX_deepdive_2026-10-07.html</code>）：长期每瓦单价是估值关键变量。Q3 实际按 nameplate 是 $19.5/W/年；Musk 说约一半自用，只算出租部分约 $39。CFO 说现货价在 $50 以上；现价隐含约 $37，盈亏平衡约 $15。第 IV 篇基本是 SPCX 牛市情景（$32）的论据；UBS 图里的长约 $10–25B/GW 更接近基准或熊市的终值假设。</li>
+<li><b>AI Capex ROI</b>（<code>ai_capex_roi_timeline_2026_2030.md</code>）：O+A 2027 年新增约 11 GW × $50B ≈ $5,500 亿，约是 JPM 预测 2027 年全球 AI capex $1.1 万亿的一半，和第 III 篇"O+A 占新增近一半"一致。另外，该文件里 Anthropic Q2"$5.59 亿经营利润 / $109 亿收入"（约 5%）和"Q2 EBIT 利润率 36%"自相矛盾，36% 不可能是全公司口径，待修正。</li>
+<li><b>CBRS</b>（<code>cerebras/CBRS_deepdive_2026-08-13.html</code>）：第 II 篇的 agentic CPU 论点和第 I 篇的"吞吐 = 并发 × 单人速度"放在一起看，agent 爆发更利好吞吐型 HBM GPU 和 CPU/DRAM。单用户极速（Cerebras）只吃"人在等、且模型生成占任务时间大头"的那一段。OpenAI Ultrafast 档换到 NVIDIA、约 300 tok/s，和"够快就行"一致。</li>
+<li><b>存储股</b>：项目里没有 HBM/DRAM 厂商的深度报告，第 II 篇目前是唯一框架。如果要用，最需要独立核实的是 DRAM 年产量（EB）、HBM4 晶圆消耗比和长鑫产能三项。</li>
+</ul>
+</div>
+
+<h2 id="watch">后续能证实或证伪的节点</h2>
+<div class="box">
+<ul>
+<li><b>Anthropic / OpenAI S-1 公开</b>：ARR 是 gross 还是 net、实际 GW、毛利率、训练与推理算力拆分。这能直接检验第 III、IV 篇的单位经济。</li>
+<li><b>SPCX Q3 10-Q 和 Q4 财报</b>：Customer B 占比、新 CSA 条款，以及 SI 收入 ÷ 平均 GW 能否维持在 $30/W 以上。这能检验"短约 $40–50B/GW"是不是常态。</li>
+<li><b>新签长约的每 GW 价格</b>（CRWV、NBIS、ORCL 披露）：看长约和短约的价差是收窄还是扩大。</li>
+<li><b>DRAM 合约价、HBM4 定价、长鑫产能</b>（TrendForce 季度数据）：检验第 II 篇的供需缺口和长鑫影响。</li>
+<li><b>服务器 CPU 季度收入</b>（AMD、INTC、NVDA Vera）：看是否沿着 $2,000 亿+ TAM 的路径走。</li>
+</ul>
+</div>
+
+<h2 id="src">来源</h2>
+<p class="muted">原文：<code>半导体终局/</code> 下四个文件夹（X 帖子存档）。项目文件：<code>spacex/SPCX_Q3FY2026_earnings_call_transcript_roic.txt</code>、<code>spacex/SPCX_deepdive_2026-10-07.html</code>、<code>ai_capex_roi_timeline_2026_2030.md</code>、<code>cerebras/CBRS_deepdive_2026-08-13.html</code>。UBS 每 GW 收入图和 20VC ARR 图来自原文配图。</p>
+<ul class="muted">
+<li><a href="https://finance.yahoo.com/technology/ai/articles/openai-annualized-revenue-tops-40-111122841.html">OpenAI annualized revenue tops $40B（Yahoo / Bloomberg）</a></li>
+<li><a href="https://finance.yahoo.com/technology/article/openais-annualized-revenue-20-billion-lower-than-prior-investor-estimates-174058048.html">OpenAI annualized revenue $20B lower than prior estimates（FT）</a></li>
+<li><a href="https://sacra.com/c/openai/">Sacra: OpenAI</a></li>
+<li><a href="https://storyboard18.com/digital/openai-revenue-tops-20-billion-as-computing-capacity-triples-87898.htm">OpenAI revenue tops $20B as compute triples（1.9 GW）</a></li>
+<li><a href="https://news.bgov.com/legal-ops-and-tech/anthropic-revenue-run-rate-surpasses-65-billion-ahead-of-ipo">Anthropic run rate surpasses $65B（Bloomberg）</a></li>
+<li><a href="https://www.anthropic.com/news/anthropic-amazon-compute">Anthropic and Amazon expand compute collaboration</a></li>
+<li><a href="https://www.newsquawk.com/headlines/anthropic-reportedly-plans-to-have-5gw-worth-of-compute-by-the-end-of-2026-reports-nyt">Anthropic plans 5 GW by end-2026（NYT via Newsquawk）</a></li>
+<li><a href="https://cryptobriefing.com/anthropic-10-gw-compute-capacity-2027/">Anthropic targets ~9.5 GW by end-2027</a></li>
+<li><a href="https://www.kucoin.com/news/flash/bernstein-report-agentic-ai-to-shift-cpu-role-in-data-centers-hailiang-info-target-raised">Bernstein: agentic AI to reshape CPU role（$223B）</a></li>
+<li><a href="https://finance.biggo.com/news/bf4e1ab1-d03d-4d59-8288-d4baac8fcc4a">BofA lifts 2030 server CPU forecast to $210B</a></li>
+<li><a href="https://nasdaq.com/articles/nvidia-move-just-put-amd-and-intel-defensive">NVIDIA Vera $200B TAM（Nasdaq）</a></li>
+<li><a href="https://longportapp.cn/news/288364021">AI agents ignite CPU war（AMD $120B）</a></li>
+<li><a href="https://www.adweek.com/dealroom/nvidia-confirms-purchase-of-hugging-face-for-nearly-13-billion/">NVIDIA confirms purchase of Hugging Face（Adweek）</a></li>
+<li><a href="https://www.tomshardware.com/pc-components/dram/cxmt-close-to-matching-microns-memory-capacity-in-2026-research-claims-would-put-china-on-track-to-become-worlds-second-largest-dram-producer">CXMT close to matching Micron's capacity in 2026（Tom's Hardware）</a></li>
+<li><a href="https://www.utmel.com/blog/categories/memory%20chip/2026-dram-and-the-3-to-1-hbm-rule-market-supply-analysis-and-b2b-procurement-guide">2026 DRAM and the 3-to-1 HBM rule（Utmel）</a></li>
+<li><a href="https://resources.altium.com/p/how-ai-broke-memory-market">How AI broke the memory market（Altium）</a></li>
+<li><a href="https://www.stern.nyu.edu/sites/default/files/2026-06/Glucksman_DavidLisk.pdf">NYU working paper: OpenRouter own-price elasticity ≈ −0.78</a></li>
+<li><a href="https://arxiv.org/pdf/2601.10088">State of AI: 100 trillion token study with OpenRouter</a></li>
+<li><a href="https://cryptobriefing.com/openai-codex-internal-adoption-non-developer-surge/">OpenAI Codex internal / enterprise adoption data</a></li>
+<li><a href="https://fortune.com/press-releases/fireworks-raises-1-5b-series-d-reaches-1b-arr-2026-07-16/">Fireworks raises $1.5B Series D, reaches $1B ARR</a></li>
+<li><a href="https://finviz.com/news/331346/anthropics-ai-boom-could-mean-big-money-for-amazons-aws-analyst">Anthropic share of AWS AI revenue（analyst estimate）</a></li>
+</ul>
+</div>
+</body>
+</html>
